@@ -2,6 +2,8 @@
 
 namespace AdaiasMagdiel\Rubik;
 
+use Exception;
+
 abstract class Model
 {
 	protected string $table;
@@ -59,10 +61,56 @@ abstract class Model
 
 		$sql = implode(" ", $sql);
 		$sttm = $pdo->prepare($sql);
+		$res = $sttm->execute($values);
 
-		$this->data = [];
+		if ($res)
+			$this->data = [];
 
-		return $sttm->execute($values);
+		return $res;
+	}
+
+	public function update()
+	{
+		$fields = static::fields();
+		$pkField = array_keys(array_filter($fields, function ($item) {
+			return $item["primary_key"];
+		}))[0];
+
+		if (!isset($this->data[$pkField]) || is_null($this->data[$pkField])) {
+			throw new Exception("Missing primary key.");
+		}
+
+		$sql = [];
+		$sql[] = "UPDATE";
+		$sql[] = self::getTableName();
+		$sql[] = "SET";
+
+		$values = [];
+
+		$fieldsString = [];
+		foreach ($fields as $key => $_) {
+			$repKey = ":$key";
+
+			if (isset($this->data[$key]) && $key !== $pkField) {
+				$fieldsString[] = "$key = $repKey";
+			}
+
+			$values[$repKey] = $this->data[$key];
+		}
+
+		$sql[] = implode(", ", $fieldsString);
+		$sql[] = "WHERE $pkField = :$pkField;";
+
+		$pdo = Rubik::getConn();
+
+		$sql = implode(" ", $sql);
+		$sttm = $pdo->prepare($sql);
+		$res = $sttm->execute($values);
+
+		if ($res)
+			$this->data = [];
+
+		return $res;
 	}
 
 	public static function createTable(bool $ignore = false): bool
