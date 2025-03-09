@@ -6,8 +6,66 @@ abstract class Model
 {
 	protected string $table;
 	protected array $fields = [];
+	protected array $data = [];
 
-	public static function createTable(bool $ignore = false)
+	public function __set(string $key, mixed $value)
+	{
+		$fields = array_keys(static::fields());
+
+		if (in_array($key, $fields))
+			$this->data[$key] = $value;
+	}
+
+	public function __get(string $key)
+	{
+		$fields = array_keys($this->data);
+
+		if (in_array($key, $fields))
+			return $this->data[$key];
+
+		return NULL;
+	}
+
+	public function save(bool $ignore = false): bool
+	{
+		$fields = static::fields();
+
+		$sql = [];
+
+		if ($ignore)
+			$sql[] = "INSERT OR IGNORE INTO";
+		else
+			$sql[] = "INSERT INTO";
+
+		$sql[] = self::getTableName();
+
+		$values = [];
+
+		$keysString = [];
+		$valuesString = [];
+		foreach ($fields as $key => $_) {
+			$repKey = ":$key";
+
+			$keysString[] = $key;
+			$valuesString[] = $repKey;
+
+			$values[$repKey] = $this->data[$key] ?? null;
+		}
+		$sql[] = "(" . implode(", ", $keysString) . ")";
+		$sql[] = "VALUES";
+		$sql[] = "(" . implode(", ", $valuesString) . ");";
+
+		$pdo = Rubik::getConn();
+
+		$sql = implode(" ", $sql);
+		$sttm = $pdo->prepare($sql);
+
+		$this->data = [];
+
+		return $sttm->execute($values);
+	}
+
+	public static function createTable(bool $ignore = false): bool
 	{
 		$fields = static::fields();
 
@@ -19,7 +77,7 @@ abstract class Model
 		if ($ignore)
 			$sql[] = "IF NOT EXISTS";
 
-		$sql[] = isset(static::$table) ? static::$table : self::getTableName();
+		$sql[] = self::getTableName();
 
 		$fieldsString = [];
 		foreach ($fields as $key => $field) {
@@ -35,9 +93,39 @@ abstract class Model
 		return is_int($res);
 	}
 
+	public static function find(mixed $pk): ?static
+	{
+		$fields = static::fields();
+		$pkField = array_keys(array_filter($fields, function ($item) {
+			return $item["primary_key"];
+		}))[0];
+
+		$sql = [];
+
+		$sql[] = "SELECT * FROM";
+		$sql[] = self::getTableName();
+		$sql[] = "WHERE $pkField = :$pkField;";
+		$sql = implode(" ", $sql);
+
+		$pdo = Rubik::getConn();
+		$sttm = $pdo->prepare($sql);
+		$sttm->execute([":$pkField" => $pk]);
+
+		$res = $sttm->fetch();
+
+		if ($res === false) return NULL;
+
+		$obj = new static();
+		foreach ($res as $key => $value) {
+			$obj->__set($key, $value);
+		}
+
+		return $obj;
+	}
+
 	protected static function fields(): array
 	{
-		throw new \Exception("Not Implemented.");
+		throw new \Exception("Not Implemented 'fields()' in '" . static::class . "'.");
 	}
 
 	private static function getFieldString(array $field): string
@@ -76,6 +164,9 @@ abstract class Model
 
 	private static function getTableName(): string
 	{
+		if (isset(static::$table))
+			return static::$table;
+
 		$parts = explode("\\", static::class);
 		$table = $parts[count($parts) - 1];
 
