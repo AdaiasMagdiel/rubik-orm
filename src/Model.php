@@ -72,9 +72,7 @@ abstract class Model
 	public function update()
 	{
 		$fields = static::fields();
-		$pkField = array_keys(array_filter($fields, function ($item) {
-			return $item["primary_key"];
-		}))[0];
+		$pkField = self::primaryKey();
 
 		if (!isset($this->data[$pkField]) || is_null($this->data[$pkField])) {
 			throw new Exception("Missing primary key.");
@@ -113,6 +111,21 @@ abstract class Model
 		return $res;
 	}
 
+	public static function query(): Query
+	{
+		return new Query(static::class, self::getTableName());
+	}
+
+	public static function primaryKey(): string
+	{
+		$fields = static::fields();
+		$pkField = array_keys(array_filter($fields, function ($item) {
+			return $item["primary_key"];
+		}))[0];
+
+		return $pkField;
+	}
+
 	public static function createTable(bool $ignore = false): bool
 	{
 		$fields = static::fields();
@@ -143,10 +156,7 @@ abstract class Model
 
 	public static function find(mixed $pk): ?static
 	{
-		$fields = static::fields();
-		$pkField = array_keys(array_filter($fields, function ($item) {
-			return $item["primary_key"];
-		}))[0];
+		$pkField = self::primaryKey();
 
 		$sql = [];
 
