@@ -2,85 +2,58 @@
 
 namespace AdaiasMagdiel\Rubik;
 
-use InvalidArgumentException;
-use PDO;
-use RuntimeException;
-use PDOException;
-
+/**
+ * Rubik is the main entry point for the Rubik ORM, providing static methods to manage
+ * database connections and access the underlying PDO connection.
+ */
 class Rubik
 {
-	private const DEFAULT_PDO_OPTIONS = [
-		PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-		PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-		PDO::ATTR_EMULATE_PREPARES => false
-	];
+    /**
+     * Establishes a database connection using the provided configuration.
+     *
+     * @param array $config Configuration array containing database connection details.
+     *                      Required keys depend on the driver:
+     *                      - 'driver': 'sqlite' or 'mysql'
+     *                      - For SQLite: 'path' (e.g., ':memory:' or file path)
+     *                      - For MySQL: 'host', 'database', 'username', 'password'
+     *                      Optional: 'options' (PDO options array)
+     * @return void
+     * @throws InvalidArgumentException If the configuration is invalid.
+     * @throws RuntimeException If the connection fails.
+     */
+    public static function connect(array $config): void
+    {
+        DatabaseConnection::connect($config);
+    }
 
-	private static ?PDO $pdo = null;
+    /**
+     * Retrieves the active PDO database connection.
+     *
+     * @return PDO|null The active PDO connection instance, or null if not connected.
+     * @throws RuntimeException If no active connection exists.
+     */
+    public static function getConn()
+    {
+        return DatabaseConnection::getConnection();
+    }
 
-	/**
-	 * Establishes a database connection
-	 * 
-	 * @throws RuntimeException If connection fails
-	 */
-	public static function connect(string $sqlitePath): void
-	{
-		if (empty($sqlitePath)) {
-			throw new InvalidArgumentException(
-				"SQLite database path cannot be empty."
-			);
-		}
+    /**
+     * Closes the active database connection.
+     *
+     * @return void
+     */
+    public static function disconnect(): void
+    {
+        DatabaseConnection::disconnect();
+    }
 
-		try {
-			self::$pdo = new PDO(
-				"sqlite:{$sqlitePath}",
-				null,
-				null,
-				self::DEFAULT_PDO_OPTIONS
-			);
-
-			self::$pdo->exec('PRAGMA foreign_keys = ON;');
-		} catch (PDOException $e) {
-			throw new RuntimeException(
-				sprintf(
-					"Failed to establish database connection to '%s': %s",
-					$sqlitePath,
-					$e->getMessage()
-				),
-				$e->getCode(),
-				$e
-			);
-		}
-	}
-
-	/**
-	 * Get the active database connection
-	 * 
-	 * @throws RuntimeException If no active connection
-	 */
-	public static function getConn(): PDO
-	{
-		if (!self::isConnected()) {
-			throw new RuntimeException(
-				"Database connection not established. Call Rubik::connect() first."
-			);
-		}
-
-		return self::$pdo;
-	}
-
-	/**
-	 * Close the database connection
-	 */
-	public static function disconnect(): void
-	{
-		self::$pdo = null;
-	}
-
-	/**
-	 * Check if connection is active
-	 */
-	public static function isConnected(): bool
-	{
-		return self::$pdo instanceof PDO;
-	}
+    /**
+     * Checks if a database connection is currently active.
+     *
+     * @return bool True if a connection is active, false otherwise.
+     */
+    public static function isConnected(): bool
+    {
+        return DatabaseConnection::isConnected();
+    }
 }
