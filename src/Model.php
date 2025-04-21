@@ -2,475 +2,455 @@
 
 namespace AdaiasMagdiel\Rubik;
 
-use Exception;
+use RuntimeException;
+use PDO;
+use PDOStatement;
+use InvalidArgumentException;
 
 /**
- * Abstract base class for ActiveRecord-style database entities
- * 
- * Provides CRUD operations, schema management and query building capabilities
+ * Abstract base class for database models in the Rubik ORM.
+ * Provides methods for CRUD operations, relationships, and table schema management.
+ * Subclasses must implement the fields() method to define the table schema.
  */
 abstract class Model
 {
-	protected static string $table;
-	protected array $fields = [];
+	/** @var string The database table name for the model. */
+	protected static string $table = '';
+
+	/** @var array Associative array of column names and their values for the model instance. */
 	protected array $data = [];
 
-	/**
-	 * Magic setter for model properties
-	 * 
-	 * @param string $key Property name
-	 * @param mixed $value Property value
-	 * @throws RuntimeException If trying to set undefined field
-	 */
-	public function __set(string $key, mixed $value)
-	{
-		$fields = static::fields();
+	/** @var array Associative array of columns that have been modified since the last save. */
+	protected array $dirty = [];
 
-		if (isset($fields[$key])) {
+	/** @var array Associative array of cached relationship results. */
+	protected array $relationships = [];
+
+	/**
+	 * Sets a value for a model field, marking it as dirty if it exists in the schema.
+	 *
+	 * @param string $key The field name.
+	 * @param mixed $value The value to set.
+	 * @return void
+	 */
+	public function __set(string $key, mixed $value): void
+	{
+		if ($this->hasField($key)) {
 			$this->data[$key] = $value;
+			$this->dirty[$key] = true;
 		}
 	}
 
 	/**
-	 * Magic getter for model properties
-	 * 
-	 * @param string $key Property name
-	 * @return mixed|null Property value or null if not set
+	 * Retrieves a field value or resolves a relationship.
+	 *
+	 * If the key is a field, returns its value. If it is a relationship method,
+	 * executes and caches the relationship results.
+	 *
+	 * @param string $key The field name or relationship method name.
+	 * @return mixed The field value, relationship results, or null if not found.
 	 */
-	public function __get(string $key)
+	public function __get(string $key): mixed
 	{
-		return $this->data[$key] ?? null;
+		if (array_key_exists($key, $this->data)) {
+			return $this->data[$key];
+		}
+
+		if (method_exists($this, $key)) {
+			$relationship = $this->$key();
+			return $this->relationships[$key] = $relationship->getResults();
+		}
+
+		return null;
 	}
 
 	/**
-	 * Persist the model to the database
-	 * 
-	 * @param bool $ignore Use INSERT OR IGNORE clause
-	 * @return bool True on successful save
-	 * @throws RuntimeException If database operation fails
+	 * Creates a new query builder instance for the model.
+	 *
+	 * @return Query A query builder instance configured for the model.
+	 */
+	public static function query(): Query
+	{
+		return (new Query())->setModel(static::class);
+	}
+
+	/**
+	 * Saves the model instance to the database.
+	 *
+	 * Performs an INSERT if the primary key is not set, or an UPDATE if it is.
+	 *
+	 * @param bool $ignore If true, uses INSERT OR IGNORE to skip duplicates (default: false).
+	 * @return bool True if the save was successful, false otherwise.
 	 */
 	public function save(bool $ignore = false): bool
 	{
 		$fields = static::fields();
+		$pk = static::primaryKey();
 
-		$sql = [];
-
-		if ($ignore)
-			$sql[] = "INSERT OR IGNORE INTO";
-		else
-			$sql[] = "INSERT INTO";
-
-		$sql[] = self::getTableName();
+		if (isset($this->data[$pk]) && !$ignore) {
+			return $this->update();
+		}
 
 		$values = [];
+		$columns = [];
+		$placeholders = [];
 
-		$keysString = [];
-		$valuesString = [];
 		foreach ($fields as $key => $_) {
-			$repKey = ":$key";
-
-			$keysString[] = $key;
-			$valuesString[] = $repKey;
-
-			$values[$repKey] = $this->data[$key] ?? null;
-		}
-		$sql[] = "(" . implode(", ", $keysString) . ")";
-		$sql[] = "VALUES";
-		$sql[] = "(" . implode(", ", $valuesString) . ");";
-
-		$pdo = Rubik::getConn();
-
-		$sql = implode(" ", $sql);
-		$sttm = $pdo->prepare($sql);
-		$res = $sttm->execute($values);
-
-		if ($res) {
-			$pk = $this::primaryKey();
-			$this->__set($pk, Rubik::getConn()->lastInsertId($pk));
+			if (array_key_exists($key, $this->data)) {
+				$columns[] = $key;
+				$placeholders[] = ":$key";
+				$values[":$key"] = $this->data[$key];
+			}
 		}
 
-		return $res;
+		$sql = sprintf(
+			'%s INTO %s (%s) VALUES (%s)',
+			$ignore ? 'INSERT OR IGNORE' : 'INSERT',
+			static::getTableName(),
+			implode(', ', $columns),
+			implode(', ', $placeholders)
+		);
+
+		$stmt = DatabaseConnection::getConnection()->prepare($sql);
+		$result = $stmt->execute($values);
+
+		if ($result && !isset($this->data[$pk])) {
+			$this->data[$pk] = DatabaseConnection::getConnection()->lastInsertId();
+		}
+
+		$this->dirty = [];
+		return $result;
 	}
 
 	/**
-	 * Update existing record in the database
-	 * 
-	 * @return bool True on successful update
-	 * @throws RuntimeException If primary key is missing or update fails
+	 * Inserts multiple records into the model's table.
+	 *
+	 * @param array $records Array of associative arrays containing column names and values.
+	 * @return bool True if the insert was successful, false if no records were provided.
+	 */
+	public static function insertMany(array $records): bool
+	{
+		if (empty($records)) {
+			return false;
+		}
+
+		$fields = static::fields();
+		$columns = array_keys($fields);
+		$values = [];
+		$placeholders = [];
+
+		foreach ($records as $index => $record) {
+			$rowPlaceholders = [];
+			foreach ($columns as $key) {
+				$placeholder = ":{$key}_{$index}";
+				$rowPlaceholders[] = $placeholder;
+				$values[$placeholder] = $record[$key] ?? null;
+			}
+			$placeholders[] = '(' . implode(', ', $rowPlaceholders) . ')';
+		}
+
+		$sql = sprintf(
+			'INSERT INTO %s (%s) VALUES %s',
+			static::getTableName(),
+			implode(', ', $columns),
+			implode(', ', $placeholders)
+		);
+
+		$stmt = DatabaseConnection::getConnection()->prepare($sql);
+		return $stmt->execute($values);
+	}
+
+	/**
+	 * Updates the model instance in the database.
+	 *
+	 * Only updates fields marked as dirty since the last save.
+	 *
+	 * @return bool True if the update was successful or no changes were needed, false otherwise.
+	 * @throws RuntimeException If the primary key is not set.
 	 */
 	public function update(): bool
 	{
-		$fields = static::fields();
-		$pkField = self::primaryKey();
-
-		if (!isset($this->data[$pkField])) {
-			throw new Exception("Primary key value is missing. Ensure the primary key is set before updating.");
+		$pk = static::primaryKey();
+		if (!isset($this->data[$pk])) {
+			throw new RuntimeException('Cannot update record without primary key.');
 		}
 
-		$sql = ["UPDATE", self::getTableName(), "SET"];
 		$values = [];
-		$fieldsString = [];
-		$pkValue = $this->data[$pkField];
+		$sets = [];
 
-		foreach ($fields as $key => $_) {
-			if ($key === $pkField) continue;
-
-			if (isset($this->data[$key])) {
-				$repKey = ":$key";
-				$fieldsString[] = "$key = $repKey";
-				$values[$repKey] = $this->data[$key];
+		foreach ($this->dirty as $key => $_) {
+			if ($key !== $pk && array_key_exists($key, $this->data)) {
+				$sets[] = "$key = :$key";
+				$values[":$key"] = $this->data[$key];
 			}
 		}
 
-		$sql[] = implode(", ", $fieldsString);
-		$sql[] = "WHERE $pkField = :$pkField";
-		$values[":$pkField"] = $pkValue;
+		if (empty($sets)) {
+			return true;
+		}
 
-		$sttm = Rubik::getConn()->prepare(implode(" ", $sql));
-		$res = $sttm->execute($values);
+		$values[":$pk"] = $this->data[$pk];
+		$sql = sprintf(
+			'UPDATE %s SET %s WHERE %s = :%s',
+			static::getTableName(),
+			implode(', ', $sets),
+			$pk,
+			$pk
+		);
 
-		return $res;
+		$stmt = DatabaseConnection::getConnection()->prepare($sql);
+		$result = $stmt->execute($values);
+		$this->dirty = [];
+
+		return $result;
 	}
 
 	/**
-	 * Delete record from the database
-	 * 
-	 * @return bool True on successful deletion
-	 * @throws RuntimeException If primary key is missing or deletion fails
+	 * Deletes the model instance from the database.
+	 *
+	 * @return bool True if the deletion was successful, false otherwise.
+	 * @throws RuntimeException If the primary key is not set.
 	 */
 	public function delete(): bool
 	{
-		$pkField = self::primaryKey();
-
-		if (!isset($this->data[$pkField])) {
-			throw new Exception("Primary key value is missing. Ensure the primary key is set before deleting.");
+		$pk = static::primaryKey();
+		if (!isset($this->data[$pk])) {
+			throw new RuntimeException('Cannot delete record without primary key.');
 		}
 
-		$sql = [
-			"DELETE FROM",
-			self::getTableName(),
-			"WHERE",
-			$pkField,
-			"=",
-			":$pkField"
-		];
+		$sql = sprintf(
+			'DELETE FROM %s WHERE %s = :%s',
+			static::getTableName(),
+			$pk,
+			$pk
+		);
 
-		$sttm = Rubik::getConn()->prepare(implode(" ", $sql));
-		$res = $sttm->execute([":$pkField" => $this->data[$pkField]]);
-
-		return $res;
+		$stmt = DatabaseConnection::getConnection()->prepare($sql);
+		return $stmt->execute([":$pk" => $this->data[$pk]]);
 	}
 
 	/**
-	 * Get a query builder instance for this model
-	 * 
-	 * @return Query Configured query builder
+	 * Retrieves all records from the model's table.
+	 *
+	 * @param array|string $fields The fields to select (default: '*').
+	 * @return array Array of model instances or associative arrays.
 	 */
-	public static function query(): Query
+	public static function all(array|string $fields = '*'): array
 	{
-
-		$query = new Query();
-		$query->setModel(static::class);
-
-		return $query;
+		return static::query()->select($fields)->all();
 	}
 
+	/**
+	 * Finds a record by its primary key.
+	 *
+	 * @param mixed $pk The primary key value.
+	 * @return static|null The model instance, or null if not found.
+	 */
+	public static function find(mixed $pk): ?static
+	{
+		return static::query()
+			->where(static::primaryKey(), $pk)
+			->first();
+	}
 
 	/**
-	 * Get all records from the database
-	 * 
-	 * @param array|string $fields Fields to select (default: all fields)
-	 * @return array<static> Array of model instances
-	 * @throws RuntimeException If query fails
+	 * Finds the first record matching a field value.
+	 *
+	 * @param string $key The field name to filter on.
+	 * @param mixed $value The value to match.
+	 * @param string $op The comparison operator (default: '=').
+	 * @return static|null The model instance, or null if not found.
 	 */
-	public static function all(array|string $fields = "*"): array
+	public static function findOneBy(string $key, mixed $value, string $op = '='): ?static
 	{
-		if (is_string($fields)) {
-			$fields = [$fields];
+		return static::query()
+			->where($key, $value, $op)
+			->first();
+	}
+
+	/**
+	 * Finds all records matching a field value.
+	 *
+	 * @param string $key The field name to filter on.
+	 * @param mixed $value The value to match.
+	 * @param string $op The comparison operator (default: '=').
+	 * @return array Array of model instances.
+	 */
+	public static function findAllBy(string $key, mixed $value, string $op = '='): array
+	{
+		return static::query()
+			->where($key, $value, $op)
+			->all();
+	}
+
+	/**
+	 * Creates the database table for the model based on its field definitions.
+	 *
+	 * @param bool $ifNotExists If true, adds IF NOT EXISTS to the CREATE TABLE statement (default: false).
+	 * @return bool True if the table was created successfully, false otherwise.
+	 * @throws RuntimeException If no fields are defined.
+	 */
+	public static function createTable(bool $ifNotExists = false): bool
+	{
+		$fields = static::fields();
+		if (empty($fields)) {
+			throw new RuntimeException('No fields defined for table creation.');
 		}
 
-		$pkField = self::primaryKey();
-		$fields = array_unique(array_merge([$pkField], $fields));
+		$columns = [];
+		foreach ($fields as $key => $field) {
+			$columns[] = sprintf('%s %s', $key, self::getFieldString($field));
+		}
 
-		$sql = [
-			"SELECT",
-			implode(", ", $fields),
-			"FROM",
-			self::getTableName()
-		];
+		$sql = sprintf(
+			'CREATE TABLE %s %s (%s)',
+			$ifNotExists ? 'IF NOT EXISTS' : '',
+			static::getTableName(),
+			implode(', ', $columns)
+		);
 
-		$sttm = Rubik::getConn()->prepare(implode(" ", $sql));
-		$sttm->execute();
-		$res = $sttm->fetchAll();
-
-		if ($res === false) return [];
-
-		return array_map(function ($item) {
-			$model = new static();
-			foreach ($item as $key => $value) {
-				$model->__set($key, $value);
-			}
-			return $model;
-		}, $res ?: []);
+		return DatabaseConnection::getConnection()->exec($sql) !== false;
 	}
 
 	/**
-	 * Get the primary key field name
-	 * 
-	 * @return string Primary key field name
-	 * @throws RuntimeException If no primary key defined
+	 * Defines a belongsTo relationship with another model.
+	 *
+	 * @param string $related The fully qualified class name of the related model.
+	 * @param string $foreignKey The foreign key column in the current model's table.
+	 * @return Relationship The relationship instance.
+	 */
+	public function belongsTo(string $related, string $foreignKey): Relationship
+	{
+		return new Relationship('belongsTo', static::class, $related, $foreignKey, $this);
+	}
+
+	/**
+	 * Defines a hasMany relationship with another model.
+	 *
+	 * @param string $related The fully qualified class name of the related model.
+	 * @param string $foreignKey The foreign key column in the related model's table.
+	 * @return Relationship The relationship instance.
+	 */
+	public function hasMany(string $related, string $foreignKey): Relationship
+	{
+		return new Relationship('hasMany', static::class, $related, $foreignKey, $this);
+	}
+
+	/**
+	 * Returns the primary key column name for the model.
+	 *
+	 * @return string The primary key column name.
+	 * @throws RuntimeException If no primary key is defined.
 	 */
 	public static function primaryKey(): string
 	{
 		$fields = static::fields();
-		$pkField = array_keys(array_filter($fields, function ($item) {
-			return $item["primary_key"];
-		}));
-
-		if (count($pkField) === 0)
-			throw new Exception("No primary key field was found in the fields definition. Please ensure at least one field is marked as a primary key.");
-
-		return $pkField[0];
+		foreach ($fields as $key => $field) {
+			if ($field['primary_key'] ?? false) {
+				return $key;
+			}
+		}
+		throw new RuntimeException('No primary key defined for model.');
 	}
 
 	/**
-	 * Get table name for the model
-	 * 
-	 * Auto-generated if not explicitly defined:
-	 * - Uses class basename
-	 * - Converts to lowercase
-	 * - Appends 's' (e.g., 'User' → 'users')
-	 * 
-	 * @return string Database table name
+	 * Returns the table name for the model.
+	 *
+	 * Uses the explicitly defined $table property, or derives it from the class name.
+	 *
+	 * @return string The table name.
 	 */
 	public static function getTableName(): string
 	{
-		if (isset(static::$table))
+		if (!empty(static::$table)) {
 			return static::$table;
-
-		$parts = explode("\\", static::class);
-		$table = $parts[count($parts) - 1];
-
-		return strtolower($table) . "s";
-	}
-
-	/**
-	 * Create database table for the model
-	 * 
-	 * @param bool $ignore Use CREATE TABLE IF NOT EXISTS
-	 * @return bool True if table was created successfully
-	 * @throws RuntimeException If field definitions are invalid
-	 */
-	public static function createTable(bool $ignore = false): bool
-	{
-		$fields = static::fields();
-
-		if (empty($fields)) {
-			throw new Exception("The fields description is empty or not defined. Expected a non-empty array of field definitions.");
 		}
 
-		$sql = ["CREATE TABLE"];
-		if ($ignore)
-			$sql[] = "IF NOT EXISTS";
-
-		$sql[] = self::getTableName();
-
-		$fieldsString = [];
-		foreach ($fields as $key => $field) {
-			$fieldsString[] = $key . " " . self::getFieldString($field);
-		}
-		$sql[] =  "(" . implode(", ", $fieldsString) . ");";
-
-		$sttm = implode(" ", $sql);
-
-		$pdo = Rubik::getConn();
-		$res = $pdo->exec($sttm);
-
-		return is_int($res);
+		$class = str_replace('\\', '/', static::class);
+		return strtolower(basename($class)) . 's';
 	}
 
 	/**
-	 * Find record by primary key
-	 * 
-	 * @param mixed $pk Primary key value
-	 * @return static|null Model instance or null if not found
-	 * @throws RuntimeException If query fails
-	 */
-	public static function find(mixed $pk): ?static
-	{
-		$pkField = static::primaryKey();
-
-		$sql = [];
-
-		$sql[] = "SELECT * FROM";
-		$sql[] = self::getTableName();
-		$sql[] = "WHERE $pkField = :$pkField;";
-		$sql = implode(" ", $sql);
-
-		$pdo = Rubik::getConn();
-		$sttm = $pdo->prepare($sql);
-		$sttm->execute([":$pkField" => $pk]);
-
-		$res = $sttm->fetch();
-
-		if ($res === false) return NULL;
-
-		$obj = new static();
-		foreach ($res as $key => $value) {
-			$obj->__set($key, $value);
-		}
-
-		return $obj;
-	}
-
-	/**
-	 * Find single record by field value
-	 * 
-	 * @param string $key Field name
-	 * @param mixed $value Search value
-	 * @param string $op Comparison operator (=, <>, LIKE, etc)
-	 * @return static|null Model instance or null if not found
-	 * @throws RuntimeException If field doesn't exist or query fails
-	 */
-	public static function findOneBy(
-		string $key,
-		mixed $value,
-		string $op = "="
-	): ?static {
-		$sql = sprintf(
-			"SELECT * FROM %s WHERE %s %s :%s;",
-			self::getTableName(),
-			$key,
-			$op,
-			$key
-		);
-
-		$sttm = Rubik::getConn()->prepare($sql);
-		$sttm->execute([":$key" => $value]);
-
-		$result = $sttm->fetch();
-		if (!$result) return NULL;
-
-		$model = new static();
-		foreach ($result as $key => $value) {
-			$model->__set($key, $value);
-		}
-		return $model;
-	}
-
-	/**
-	 * Find multiple records by field value
-	 * 
-	 * @param string $key Field name
-	 * @param mixed $value Search value
-	 * @param string $op Comparison operator (=, <>, LIKE, etc)
-	 * @return array<static> Array of model instances
-	 * @throws RuntimeException If field doesn't exist or query fails
-	 */
-	public static function findAllBy(
-		string $key,
-		mixed $value,
-		string $op = "="
-	): array {
-		$sql = sprintf(
-			"SELECT * FROM %s WHERE %s %s :%s;",
-			self::getTableName(),
-			$key,
-			$op,
-			$key
-		);
-
-		$sttm = Rubik::getConn()->prepare($sql);
-		$sttm->execute([":$key" => $value]);
-
-		$results = $sttm->fetchAll();
-		return array_map(function ($result) {
-			$model = new static();
-			foreach ($result as $key => $value) {
-				$model->__set($key, $value);
-			}
-			return $model;
-		}, $results ?: []);
-	}
-
-	/**
-	 * Define the model's database schema
-	 * 
-	 * @return array Field definitions using field helper methods
-	 * @throws RuntimeException Must be implemented in child classes
+	 * Defines the field schema for the model's table.
+	 *
+	 * Must be implemented by subclasses to specify the table's columns and their properties.
+	 *
+	 * @return array Associative array of field names and their properties.
+	 * @throws RuntimeException If not implemented in the subclass.
 	 */
 	protected static function fields(): array
 	{
-		throw new Exception("The 'fields()' method is not implemented in class '" . static::class . "'. Please provide an implementation to define the fields.");
+		throw new RuntimeException(
+			sprintf('Method fields() must be implemented in %s', static::class)
+		);
 	}
 
 	/**
-	 * Generate SQL column definition from field attributes
-	 * 
-	 * @param array $field Field definition array
-	 * @return string SQL column definition
+	 * Generates the SQL field definition string for a field.
+	 *
+	 * @param array $field The field properties (type, primary_key, autoincrement, etc.).
+	 * @return string The SQL field definition.
 	 */
-	private static function getFieldString(array $field): string
+	protected static function getFieldString(array $field): string
 	{
-		$sttm = [];
-
-		$sqlCommands = [
-			'type' => fn($value) => strtoupper($value->name),
-			'primary_key' => fn($value) => $value ? 'PRIMARY KEY' : '',
-			'autoincrement' => fn($value) => $value ? 'AUTOINCREMENT' : '',
-			'unique' => fn($value) => $value ? 'UNIQUE' : '',
-			'not_null' => fn($value) => $value ? 'NOT NULL' : '',
-			'default' => fn($value) => !is_null($value) ? 'DEFAULT ' . self::escapeDefaultValue($value) : '',
+		$parts = [
+			strtoupper($field['type']->value),
+			$field['primary_key'] ?? false ? 'PRIMARY KEY' : '',
+			$field['autoincrement'] ?? false ? (
+				DatabaseConnection::getDriver() === 'mysql' ? 'AUTO_INCREMENT' : 'AUTOINCREMENT'
+			) : '',
+			$field['unique'] ?? false ? 'UNIQUE' : '',
+			$field['not_null'] ?? false ? 'NOT NULL' : '',
+			isset($field['default']) ? sprintf(
+				'DEFAULT %s',
+				self::escapeDefaultValue($field['default'])
+			) : '',
 		];
 
-		foreach ($sqlCommands as $key => $callback) {
-			if (isset($field[$key])) {
-				$result = $callback($field[$key]);
-
-				if (!empty($result)) {
-					$sttm[] = $result;
-				}
-			}
-		}
-
-		return implode(" ", $sttm);
+		return implode(' ', array_filter($parts));
 	}
 
 	/**
-	 * Sanitize default values for SQL statements
-	 * 
-	 * @param mixed $value Default value
-	 * @return string Sanitized SQL value
+	 * Escapes a default value for use in SQL field definitions.
+	 *
+	 * @param mixed $value The default value to escape.
+	 * @return string The escaped default value.
 	 */
-	private static function escapeDefaultValue($value): string
+	protected static function escapeDefaultValue(mixed $value): string
 	{
-		if (is_string($value)) {
-			return "'$value'";
+		if (is_null($value)) {
+			return 'NULL';
 		}
-		return $value;
+		if (is_bool($value)) {
+			return $value ? '1' : '0';
+		}
+		if (is_string($value)) {
+			return sprintf("'%s'", addslashes($value));
+		}
+		return (string)$value;
 	}
 
 	/**
-	 * Define an integer field
-	 * 
-	 * @param bool $autoincrement Auto-incrementing field
-	 * @param bool $pk Primary key
-	 * @param bool $unique Unique constraint
-	 * @param bool $notNull Not null constraint
-	 * @param int|null $default Default value
-	 * @return array Field definition array
+	 * Defines an INTEGER field for the model's table.
+	 *
+	 * @param bool $autoincrement Whether the field auto-increments (default: false).
+	 * @param bool $primaryKey Whether the field is the primary key (default: false).
+	 * @param bool $unique Whether the field must be unique (default: false).
+	 * @param bool $notNull Whether the field cannot be null (default: false).
+	 * @param int|null $default The default value (default: null).
+	 * @return array The field definition array.
 	 */
-	final public static function Int(
+	public static function Int(
 		bool $autoincrement = false,
-		bool $pk = false,
+		bool $primaryKey = false,
 		bool $unique = false,
 		bool $notNull = false,
-		int $default = null
+		?int $default = null
 	): array {
 		return [
 			'type' => FieldEnum::INTEGER,
 			'autoincrement' => $autoincrement,
-			'primary_key' => $pk,
+			'primary_key' => $primaryKey,
 			'unique' => $unique,
 			'not_null' => $notNull,
 			'default' => $default,
@@ -478,95 +458,142 @@ abstract class Model
 	}
 
 	/**
-	 * Define a text field
-	 * 
-	 * @param bool $pk Primary key
-	 * @param bool $unique Unique constraint
-	 * @param bool $notNull Not null constraint
-	 * @param string $default Default value
-	 * @return array Field definition array
+	 * Defines a TEXT field for the model's table.
+	 *
+	 * @param bool $unique Whether the field must be unique (default: false).
+	 * @param bool $notNull Whether the field cannot be null (default: false).
+	 * @param bool $primaryKey Whether the field is the primary key (default: false).
+	 * @param string|null $default The default value (default: null).
+	 * @return array The field definition array.
 	 */
-	final public static function Text(
+	public static function Text(
 		bool $unique = false,
 		bool $notNull = false,
-		bool $pk = false,
-		string $default = null
+		bool $primaryKey = false,
+		?string $default = null
 	): array {
 		return [
 			'type' => FieldEnum::TEXT,
 			'unique' => $unique,
 			'not_null' => $notNull,
-			'primary_key' => $pk,
-			'default' => $default
+			'primary_key' => $primaryKey,
+			'default' => $default,
 		];
 	}
 
 	/**
-	 * Define a real number field for floating-point values
-	 * 
-	 * @param bool $pk Primary key
-	 * @param bool $unique Unique constraint
-	 * @param bool $notNull Not null constraint
-	 * @param float|null $default Default numeric value
-	 * @return array Field definition array
+	 * Defines a REAL field for the model's table.
+	 *
+	 * @param bool $unique Whether the field must be unique (default: false).
+	 * @param bool $notNull Whether the field cannot be null (default: false).
+	 * @param bool $primaryKey Whether the field is the primary key (default: false).
+	 * @param float|null $default The default value (default: null).
+	 * @return array The field definition array.
 	 */
-	final public static function Real(
+	public static function Real(
 		bool $unique = false,
 		bool $notNull = false,
-		bool $pk = false,
-		float $default = null
+		bool $primaryKey = false,
+		?float $default = null
 	): array {
 		return [
 			'type' => FieldEnum::REAL,
 			'unique' => $unique,
 			'not_null' => $notNull,
-			'primary_key' => $pk,
-			'default' => $default
+			'primary_key' => $primaryKey,
+			'default' => $default,
 		];
 	}
 
 	/**
-	 * Define a BLOB field for binary data storage
-	 * 
-	 * @param bool $unique Enforce unique constraint
-	 * @param bool $notNull Disallow NULL values
-	 * @param mixed $default Default binary value
-	 * @return array<string,mixed> Structured field definition
+	 * Defines a BLOB field for the model's table.
+	 *
+	 * @param bool $unique Whether the field must be unique (default: false).
+	 * @param bool $notNull Whether the field cannot be null (default: false).
+	 * @param mixed $default The default value (default: null).
+	 * @return array The field definition array.
 	 */
-	final public static function Blob(
+	public static function Blob(
 		bool $unique = false,
 		bool $notNull = false,
-		$default = null
+		mixed $default = null
 	): array {
 		return [
 			'type' => FieldEnum::BLOB,
 			'unique' => $unique,
 			'not_null' => $notNull,
-			'default' => $default
+			'default' => $default,
 		];
 	}
 
 	/**
-	 * Define a numeric field for exact precision numbers
-	 * 
-	 * @param bool $unique Enforce unique constraint
-	 * @param bool $notNull Disallow NULL values
-	 * @param bool $pk Designate as primary key
-	 * @param int|float|null $default Default numeric value
-	 * @return array<string,mixed> Structured field definition
+	 * Defines a NUMERIC field for the model's table.
+	 *
+	 * @param bool $unique Whether the field must be unique (default: false).
+	 * @param bool $notNull Whether the field cannot be null (default: false).
+	 * @param bool $primaryKey Whether the field is the primary key (default: false).
+	 * @param int|float|null $default The default value (default: null).
+	 * @return array The field definition array.
 	 */
-	final public static function Numeric(
+	public static function Numeric(
 		bool $unique = false,
 		bool $notNull = false,
-		bool $pk = false,
-		int|float $default = null
+		bool $primaryKey = false,
+		int|float|null $default = null
 	): array {
 		return [
 			'type' => FieldEnum::NUMERIC,
 			'unique' => $unique,
 			'not_null' => $notNull,
-			'primary_key' => $pk,
-			'default' => $default
+			'primary_key' => $primaryKey,
+			'default' => $default,
 		];
+	}
+
+	/**
+	 * Defines a BOOLEAN field for the model's table.
+	 *
+	 * @param bool $notNull Whether the field cannot be null (default: false).
+	 * @param bool|null $default The default value (default: null).
+	 * @return array The field definition array.
+	 */
+	public static function Boolean(
+		bool $notNull = false,
+		?bool $default = null
+	): array {
+		return [
+			'type' => FieldEnum::BOOLEAN,
+			'not_null' => $notNull,
+			'default' => $default,
+		];
+	}
+
+	/**
+	 * Defines a DATETIME field for the model's table.
+	 *
+	 * @param bool $notNull Whether the field cannot be null (default: false).
+	 * @param string|null $default The default value (default: null).
+	 * @return array The field definition array.
+	 */
+	public static function DateTime(
+		bool $notNull = false,
+		?string $default = null
+	): array {
+		return [
+			'type' => FieldEnum::DATETIME,
+			'not_null' => $notNull,
+			'default' => $default,
+		];
+	}
+
+	/**
+	 * Checks if a field exists in the model's schema.
+	 *
+	 * @param string $key The field name to check.
+	 * @return bool True if the field exists, false otherwise.
+	 */
+	private function hasField(string $key): bool
+	{
+		return array_key_exists($key, static::fields());
 	}
 }
