@@ -1,6 +1,5 @@
 <?php
 
-use AdaiasMagdiel\Rubik\Query;
 use AdaiasMagdiel\Rubik\Rubik;
 
 beforeEach(function () {
@@ -83,3 +82,40 @@ it('updates records', function () {
     $user = User::findOneBy('email', 'john@example.com');
     expect($user->name)->toBe('John Updated');
 });
+
+it('paginates results correctly', function () {
+    $result = User::query()->paginate(1, 2);
+    expect($result['data'])->toHaveCount(2);
+    expect($result['current_page'])->toBe(1);
+    expect($result['per_page'])->toBe(2);
+    expect($result['total'])->toBe(3);
+    expect($result['last_page'])->toBe(2);
+    expect($result['data'][0]->name)->toBe('John');
+    expect($result['data'][1]->name)->toBe('Jane');
+});
+
+it('paginates second page correctly', function () {
+    $result = User::query()->paginate(2, 2);
+    expect($result['data'])->toHaveCount(1);
+    expect($result['current_page'])->toBe(2);
+    expect($result['per_page'])->toBe(2);
+    expect($result['total'])->toBe(3);
+    expect($result['last_page'])->toBe(2);
+    expect($result['data'][0]->name)->toBe('Bob');
+});
+
+it('paginates with where conditions', function () {
+    $result = User::query()->where('active', true)->paginate(1, 1);
+    expect($result['data'])->toHaveCount(1);
+    expect($result['total'])->toBe(2);
+    expect($result['last_page'])->toBe(2);
+    expect($result['data'][0]->name)->toBe('John');
+});
+
+it('throws exception for invalid page number', function () {
+    User::query()->paginate(0, 2);
+})->throws(\InvalidArgumentException::class, 'Page must be at least 1');
+
+it('throws exception for invalid per page value', function () {
+    User::query()->paginate(1, 0);
+})->throws(\InvalidArgumentException::class, 'PerPage must be at least 1');
