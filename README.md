@@ -42,7 +42,7 @@ Rubik ORM is a lightweight and intuitive Object-Relational Mapping (ORM) library
 ## Features
 
 - **Active Record Pattern**: Define models with schema mappings and perform CRUD operations directly on model instances.
-- **Query Builder**: Construct complex SQL queries fluently with methods like `where`, `select`, `join`, `limit`, and `whereIn`.
+- **Query Builder**: Construct complex SQL queries fluently with methods like `where`, `select`, `join`, `limit`, `whereIn` and `paginate`.
 - **Database Support**: Optimized for SQLite and MySQL/MariaDB, with driver-specific configurations and foreign key support.
 - **Relationships**: Supports `belongsTo` and `hasMany` relationships for easy data modeling.
 - **Schema Management**: Define table schemas programmatically and create tables with custom field types (e.g., INTEGER, TEXT, BOOLEAN).
@@ -215,6 +215,15 @@ $emails = ['alice@example.com', 'bob@example.com'];
 $users = User::query()
     ->whereIn('email', $emails)
     ->all();
+
+// Paginate results
+$results = User::query()
+    ->paginate(page: 1, perPage: 20);
+
+// Paginate results with where clause
+$results = User::query()
+    ->where('created_at', '2023-01-01', '>')
+    ->paginate(page: 1, perPage: 20);
 
 // Update multiple records
 User::query()
@@ -457,6 +466,7 @@ The Query Builder provides a fluent interface for constructing SQL queries. It s
 - **JOIN Operations**: `join`, `leftJoin`, `rightJoin`.
 - **UPDATE and DELETE**: `update`, `delete`, `exec`.
 - **Aggregation**: `groupBy`, `having`.
+- **Pagination**: `paginate`.
 
 Example:
 ```php
@@ -469,6 +479,19 @@ $users = User::query()
     ->orderBy('name', 'ASC')
     ->limit(10)
     ->all();
+```
+
+Or paginate results:
+
+```php
+$res = User::query()
+    ->paginate(page: 2, perPage: 10);
+
+$users = $res["data"];
+$currentPage = $res["current_page"];
+$perPage = $res["per_page"];
+$total = $res["total"];
+$lastPage = $res["last_page"];
 ```
 
 ## Relationships
@@ -564,6 +587,7 @@ Abstract base class for database models, implementing Active Record pattern.
 - `public static function find(mixed $pk): ?static`
 - `public static function findOneBy(string $key, mixed $value, string $op = '='): ?static`
 - `public static function findAllBy(string $key, mixed $value, string $op = '='): array`
+- `public static function paginate(int $page, int $perPage, array|string $fields = '*'): \stdClass`
 - `public static function createTable(bool $ifNotExists = false): bool`
 - `public function belongsTo(string $related, string $foreignKey): Relationship`
 - `public function hasMany(string $related, string $foreignKey): Relationship`
@@ -603,6 +627,7 @@ Query builder for constructing and executing SQL queries.
 - `public function all(): array`
 - `public function first(): ?object`
 - `public function exec(): bool`
+- `public function paginate(int $page, int $perPage): array`
 - `public function getSql(): string`
 
 ### Class: `Relationship`
