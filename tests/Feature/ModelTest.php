@@ -199,3 +199,21 @@ it('throws exception for invalid per page value in pagination', function () {
 
     User::paginate(1, 0);
 })->throws(\InvalidArgumentException::class, 'PerPage must be at least 1');
+
+it('serializes model data to JSON correctly', function () {
+    User::createTable(true);
+
+    $user = new User();
+    $user->name = 'John Doe';
+    $user->email = 'john@example.com';
+    $user->save();
+
+    $json = json_encode($user);
+    $decoded = json_decode($json, true);
+
+    expect($decoded)->toBeArray();
+    expect($decoded)->toHaveKeys(['id', 'name', 'email']);
+    expect($decoded['id'])->toBe($user->id);
+    expect($decoded['name'])->toBe('John Doe');
+    expect($decoded['email'])->toBe('john@example.com');
+});
