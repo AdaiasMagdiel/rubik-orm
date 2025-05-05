@@ -1,40 +1,6 @@
 <?php
 
-use AdaiasMagdiel\Rubik\Model;
 use AdaiasMagdiel\Rubik\Rubik;
-use AdaiasMagdiel\Rubik\FieldEnum;
-
-class User extends Model
-{
-    protected static function fields(): array
-    {
-        return [
-            'id' => self::Int(autoincrement: true, primaryKey: true),
-            'name' => self::Text(notNull: true),
-            'email' => self::Text(unique: true, notNull: true),
-            'active' => self::Boolean(default: true),
-            'created_at' => self::DateTime(default: 'CURRENT_TIMESTAMP'),
-        ];
-    }
-}
-
-class Post extends Model
-{
-    protected static function fields(): array
-    {
-        return [
-            'id' => self::Int(autoincrement: true, primaryKey: true),
-            'user_id' => self::Int(notNull: true),
-            'title' => self::Text(notNull: true),
-            'content' => self::Text(),
-        ];
-    }
-
-    public function user()
-    {
-        return $this->belongsTo(User::class, 'user_id');
-    }
-}
 
 beforeEach(function () {
     Rubik::connect([
@@ -165,3 +131,71 @@ it('handles relationships', function () {
     expect($foundPost->user)->not->toBeNull();
     expect($foundPost->user->email)->toBe('john@example.com');
 });
+
+it('paginates results correctly', function () {
+    User::createTable(true);
+
+    User::insertMany([
+        ['name' => 'John', 'email' => 'john@example.com', 'active' => true],
+        ['name' => 'Jane', 'email' => 'jane@example.com', 'active' => true],
+        ['name' => 'Bob', 'email' => 'bob@example.com', 'active' => false],
+    ]);
+
+    $result = User::paginate(1, 2);
+    expect($result)->toBeInstanceOf(\stdClass::class);
+    expect(count($result->data))->toBe(2);
+    expect($result->current_page)->toBe(1);
+    expect($result->per_page)->toBe(2);
+    expect($result->total)->toBe(3);
+    expect($result->last_page)->toBe(2);
+    expect($result->data[0]->name)->toBe('John');
+    expect($result->data[1]->name)->toBe('Jane');
+});
+
+it('paginates second page correctly', function () {
+    User::createTable(true);
+
+    User::insertMany([
+        ['name' => 'John', 'email' => 'john@example.com', 'active' => true],
+        ['name' => 'Jane', 'email' => 'jane@example.com', 'active' => true],
+        ['name' => 'Bob', 'email' => 'bob@example.com', 'active' => false],
+    ]);
+
+    $result = User::paginate(2, 2);
+    expect($result)->toBeInstanceOf(\stdClass::class);
+    expect(count($result->data))->toBe(1);
+    expect($result->current_page)->toBe(2);
+    expect($result->per_page)->toBe(2);
+    expect($result->total)->toBe(3);
+    expect($result->last_page)->toBe(2);
+    expect($result->data[0]->name)->toBe('Bob');
+});
+
+it('paginates with specific fields', function () {
+    User::createTable(true);
+
+    User::insertMany([
+        ['name' => 'John', 'email' => 'john@example.com', 'active' => true],
+        ['name' => 'Jane', 'email' => 'jane@example.com', 'active' => true],
+    ]);
+
+    $result = User::paginate(1, 1, ['name']);
+    expect($result)->toBeInstanceOf(\stdClass::class);
+    expect(count($result->data))->toBe(1);
+    expect($result->total)->toBe(2);
+    expect($result->last_page)->toBe(2);
+    expect($result->data[0]->name)->toBe('John');
+    expect($result->data[0]->email)->toBeNull();
+});
+
+it('throws exception for invalid page number in pagination', function () {
+    User::createTable(true);
+
+    User::paginate(0, 2);
+})->throws(\InvalidArgumentException::class, 'Page must be at least 1');
+
+it('throws exception for invalid per page value in pagination', function () {
+    User::createTable(true);
+
+    User::paginate(1, 0);
+})->throws(\InvalidArgumentException::class, 'PerPage must be at least 1');
