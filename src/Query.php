@@ -354,6 +354,45 @@ class Query
     }
 
     /**
+     * Paginates the query results.
+     *
+     * @param int $page The page number (1-based).
+     * @param int $perPage The number of items per page.
+     * @return array An array containing 'data' (results), 'current_page', 'per_page', 'total', and 'last_page'.
+     * @throws InvalidArgumentException If page or perPage is less than 1.
+     */
+    public function paginate(int $page, int $perPage): array
+    {
+        if ($page < 1) {
+            throw new InvalidArgumentException('Page must be at least 1');
+        }
+        if ($perPage < 1) {
+            throw new InvalidArgumentException('PerPage must be at least 1');
+        }
+
+        // Count total records
+        $countSql = sprintf('SELECT COUNT(*) as total FROM %s %s', $this->table, $this->buildWhereClause());
+        $countStmt = DatabaseConnection::getConnection()->prepare($countSql);
+        $countStmt->execute($this->bindings);
+        $total = (int)$countStmt->fetch(PDO::FETCH_ASSOC)['total'];
+
+        // Set pagination parameters
+        $this->limit($perPage);
+        $this->offset(($page - 1) * $perPage);
+
+        // Get paginated results
+        $data = $this->all();
+
+        return [
+            'data' => $data,
+            'current_page' => $page,
+            'per_page' => $perPage,
+            'total' => $total,
+            'last_page' => (int) max(1, ceil($total / $perPage)),
+        ];
+    }
+
+    /**
      * Returns the generated SQL query string.
      *
      * @return string The SQL query string.
