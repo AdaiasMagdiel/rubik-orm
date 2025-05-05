@@ -284,6 +284,27 @@ abstract class Model
 	}
 
 	/**
+	 * Paginates the model's query results.
+	 *
+	 * @param int $page The page number (1-based).
+	 * @param int $perPage The number of items per page.
+	 * @param array|string $fields The fields to select (default: '*').
+	 * @return \stdClass An object containing data, current_page, per_page, total, and last_page.
+	 * @throws InvalidArgumentException If page or perPage is less than 1.
+	 */
+	public static function paginate(int $page, int $perPage, array|string $fields = '*'): \stdClass
+	{
+		$result = static::query()->select($fields)->paginate($page, $perPage);
+		$pagination = new \stdClass();
+		$pagination->data = $result['data'];
+		$pagination->current_page = $result['current_page'];
+		$pagination->per_page = $result['per_page'];
+		$pagination->total = $result['total'];
+		$pagination->last_page = $result['last_page'];
+		return $pagination;
+	}
+
+	/**
 	 * Creates the database table for the model based on its field definitions.
 	 *
 	 * @param bool $ifNotExists If true, adds IF NOT EXISTS to the CREATE TABLE statement (default: false).
