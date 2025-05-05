@@ -3,16 +3,15 @@
 namespace AdaiasMagdiel\Rubik;
 
 use RuntimeException;
-use PDO;
-use PDOStatement;
 use InvalidArgumentException;
+use JsonSerializable;
 
 /**
  * Abstract base class for database models in the Rubik ORM.
  * Provides methods for CRUD operations, relationships, and table schema management.
  * Subclasses must implement the fields() method to define the table schema.
  */
-abstract class Model
+abstract class Model implements JsonSerializable
 {
 	/** @var string The database table name for the model. */
 	protected static string $table = '';
@@ -25,6 +24,23 @@ abstract class Model
 
 	/** @var array Associative array of cached relationship results. */
 	protected array $relationships = [];
+
+	/**
+	 * Defines how the model will be serialized into JSON.
+	 *
+	 * @return array The data to be serialized into JSON.
+	 */
+	public function jsonSerialize(): array
+	{
+		$result = $this->data; // Includes all model data
+
+		// Optionally, include loaded relationships
+		foreach ($this->relationships as $key => $value) {
+			$result[$key] = $value;
+		}
+
+		return $result;
+	}
 
 	/**
 	 * Sets a value for a model field, marking it as dirty if it exists in the schema.
