@@ -350,6 +350,38 @@ abstract class Model implements JsonSerializable
 	}
 
 	/**
+	 * Truncates the model's table (removes all records but keeps the table structure).
+	 * 
+	 * @return bool True if successful, false otherwise.
+	 */
+	public static function truncateTable(): bool
+	{
+		$sql = sprintf(
+			'TRUNCATE TABLE %s',
+			static::getTableName()
+		);
+
+		return DatabaseConnection::getConnection()->exec($sql) !== false;
+	}
+
+	/**
+	 * Drops the model's table (completely removes the table and its data).
+	 * 
+	 * @param bool $ifExists If true, adds IF EXISTS to prevent errors (default: false).
+	 * @return bool True if successful, false otherwise.
+	 */
+	public static function dropTable(bool $ifExists = false): bool
+	{
+		$sql = sprintf(
+			'DROP TABLE %s %s',
+			$ifExists ? 'IF EXISTS' : '',
+			static::getTableName()
+		);
+
+		return DatabaseConnection::getConnection()->exec($sql) !== false;
+	}
+
+	/**
 	 * Defines a belongsTo relationship with another model.
 	 *
 	 * @param string $related The fully qualified class name of the related model.
