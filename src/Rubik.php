@@ -2,6 +2,8 @@
 
 namespace AdaiasMagdiel\Rubik;
 
+use PDO;
+
 /**
  * Rubik is the main entry point for the Rubik ORM, providing static methods to manage
  * database connections and access the underlying PDO connection.
@@ -29,10 +31,10 @@ class Rubik
     /**
      * Retrieves the active PDO database connection.
      *
-     * @return PDO|null The active PDO connection instance, or null if not connected.
+     * @return PDO The active PDO connection instance, or null if not connected.
      * @throws RuntimeException If no active connection exists.
      */
-    public static function getConn()
+    public static function getConn(): PDO
     {
         return DatabaseConnection::getConnection();
     }
