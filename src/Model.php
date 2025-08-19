@@ -509,7 +509,7 @@ abstract class Model implements JsonSerializable
 	 * @param bool $primaryKey Whether the field is the primary key (default: false).
 	 * @param bool $unique Whether the field must be unique (default: false).
 	 * @param bool $notNull Whether the field cannot be null (default: false).
-	 * @param int|null $default The default value (default: null).
+	 * @param int|SQL|null $default The default value (default: null).
 	 * @return array The field definition array.
 	 */
 	public static function Int(
@@ -517,7 +517,7 @@ abstract class Model implements JsonSerializable
 		bool $primaryKey = false,
 		bool $unique = false,
 		bool $notNull = false,
-		?int $default = null
+		int|SQL|null $default = null
 	): array {
 		return [
 			'type' => FieldEnum::INTEGER,
@@ -535,14 +535,14 @@ abstract class Model implements JsonSerializable
 	 * @param bool $unique Whether the field must be unique (default: false).
 	 * @param bool $notNull Whether the field cannot be null (default: false).
 	 * @param bool $primaryKey Whether the field is the primary key (default: false).
-	 * @param string|null $default The default value (default: null).
+	 * @param string|SQL|null $default The default value (default: null).
 	 * @return array The field definition array.
 	 */
 	public static function Text(
 		bool $unique = false,
 		bool $notNull = false,
 		bool $primaryKey = false,
-		?string $default = null
+		string|SQL|null $default = null
 	): array {
 		return [
 			'type' => FieldEnum::TEXT,
@@ -559,14 +559,14 @@ abstract class Model implements JsonSerializable
 	 * @param bool $unique Whether the field must be unique (default: false).
 	 * @param bool $notNull Whether the field cannot be null (default: false).
 	 * @param bool $primaryKey Whether the field is the primary key (default: false).
-	 * @param float|null $default The default value (default: null).
+	 * @param float|SQL|null $default The default value (default: null).
 	 * @return array The field definition array.
 	 */
 	public static function Real(
 		bool $unique = false,
 		bool $notNull = false,
 		bool $primaryKey = false,
-		?float $default = null
+		float|SQL|null $default = null
 	): array {
 		return [
 			'type' => FieldEnum::REAL,
@@ -604,14 +604,14 @@ abstract class Model implements JsonSerializable
 	 * @param bool $unique Whether the field must be unique (default: false).
 	 * @param bool $notNull Whether the field cannot be null (default: false).
 	 * @param bool $primaryKey Whether the field is the primary key (default: false).
-	 * @param int|float|null $default The default value (default: null).
+	 * @param int|float|SQL|null $default The default value (default: null).
 	 * @return array The field definition array.
 	 */
 	public static function Numeric(
 		bool $unique = false,
 		bool $notNull = false,
 		bool $primaryKey = false,
-		int|float|null $default = null
+		int|float|SQL|null $default = null
 	): array {
 		return [
 			'type' => FieldEnum::NUMERIC,
@@ -626,12 +626,12 @@ abstract class Model implements JsonSerializable
 	 * Defines a BOOLEAN field for the model's table.
 	 *
 	 * @param bool $notNull Whether the field cannot be null (default: false).
-	 * @param bool|null $default The default value (default: null).
+	 * @param bool|SQL|null $default The default value (default: null).
 	 * @return array The field definition array.
 	 */
 	public static function Boolean(
 		bool $notNull = false,
-		?bool $default = null
+		bool|SQL|null $default = null
 	): array {
 		return [
 			'type' => FieldEnum::BOOLEAN,
@@ -644,12 +644,12 @@ abstract class Model implements JsonSerializable
 	 * Defines a DATETIME field for the model's table.
 	 *
 	 * @param bool $notNull Whether the field cannot be null (default: false).
-	 * @param string|null $default The default value (default: null).
+	 * @param string|SQL|null $default The default value (default: null).
 	 * @return array The field definition array.
 	 */
 	public static function DateTime(
 		bool $notNull = false,
-		?string $default = null
+		string|SQL|null $default = null
 	): array {
 		return [
 			'type' => FieldEnum::DATETIME,
