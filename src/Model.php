@@ -487,7 +487,7 @@ abstract class Model implements JsonSerializable
 	 */
 	protected static function escapeDefaultValue(mixed $value): string
 	{
-		if ($value instanceof RawSQL) {
+		if ($value instanceof SQL) {
 			return (string) $value;
 		}
 		if (is_null($value)) {
