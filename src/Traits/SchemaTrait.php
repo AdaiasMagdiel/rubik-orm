@@ -4,6 +4,7 @@ namespace AdaiasMagdiel\Rubik\Traits;
 
 use AdaiasMagdiel\Rubik\Rubik;
 use AdaiasMagdiel\Rubik\FieldEnum;
+use AdaiasMagdiel\Rubik\SQL;
 use InvalidArgumentException;
 use RuntimeException;
 
@@ -177,6 +178,9 @@ trait SchemaTrait
      */
     protected static function escapeDefaultValue(mixed $value): string
     {
+        if ($value instanceof SQL) {
+            return (string) $value;
+        }
         if (is_null($value)) {
             return 'NULL';
         }
