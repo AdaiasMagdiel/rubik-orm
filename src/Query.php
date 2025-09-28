@@ -314,7 +314,7 @@ class Query
             $this->buildWhereClause()
         );
 
-        $stmt = DatabaseConnection::getConnection()->prepare($sql);
+        $stmt = Rubik::getConn()->prepare($sql);
         return $stmt->execute($this->bindings);
     }
 
@@ -372,7 +372,7 @@ class Query
 
         // Count total records
         $countSql = sprintf('SELECT COUNT(*) as total FROM %s %s', $this->table, $this->buildWhereClause());
-        $countStmt = DatabaseConnection::getConnection()->prepare($countSql);
+        $countStmt = Rubik::getConn()->prepare($countSql);
         $countStmt->execute($this->bindings);
         $total = (int)$countStmt->fetch(PDO::FETCH_ASSOC)['total'];
 
@@ -412,9 +412,9 @@ class Query
     {
         $sql = $this->buildSql();
 
-        $stmt = DatabaseConnection::getConnection()->prepare($sql);
+        $stmt = Rubik::getConn()->prepare($sql);
         if ($stmt === false) {
-            $error = DatabaseConnection::getConnection()->errorInfo();
+            $error = Rubik::getConn()->errorInfo();
             throw new RuntimeException("Failed to prepare query: {$sql} - Error: {$error[2]}");
         }
         $stmt->execute($this->bindings);
