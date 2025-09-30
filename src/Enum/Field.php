@@ -1,6 +1,6 @@
 <?php
 
-namespace AdaiasMagdiel\Rubik;
+namespace AdaiasMagdiel\Rubik\Enum;
 
 /**
  * Defines SQLite field data types as an enumeration for use in the Rubik ORM.
@@ -10,10 +10,10 @@ namespace AdaiasMagdiel\Rubik;
  * SQLite data type and is used in methods like Model::getFieldString() to generate
  * SQL field definitions.
  *
- * @package AdaiasMagdiel\Rubik
+ * @package AdaiasMagdiel\Rubik\Enum
  * @see Model::getFieldString() For usage in generating SQL field definitions.
  */
-enum FieldEnum: string
+enum Field: string
 {
      case INTEGER = 'INTEGER';
      case TEXT = 'TEXT';
