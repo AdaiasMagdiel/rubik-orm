@@ -1,9 +1,10 @@
 <?php
 
-namespace AdaiasMagdiel\Rubik\Traits;
+namespace AdaiasMagdiel\Rubik\Trait\Model;
 
+use AdaiasMagdiel\Rubik\Enum\Driver;
 use AdaiasMagdiel\Rubik\Rubik;
-use AdaiasMagdiel\Rubik\FieldEnum;
+use AdaiasMagdiel\Rubik\Enum\Field;
 use AdaiasMagdiel\Rubik\SQL;
 use InvalidArgumentException;
 use RuntimeException;
@@ -69,19 +70,38 @@ trait SchemaTrait
     {
         $fields = static::fields();
         $columns = [];
+        $foreignKeys = [];
 
         foreach ($fields as $key => $field) {
-            $columns[] = sprintf('%s %s', $key, self::getFieldString($field));
+            $columnDef = sprintf('%s %s', $key, self::getFieldString($field));
+            $columns[] = $columnDef;
+
+            if (!empty($field['foreign_key'])) {
+                $fk = $field['foreign_key'];
+                $foreignKeys[] = sprintf(
+                    'FOREIGN KEY (%s) REFERENCES %s(%s)%s%s',
+                    $key,
+                    $fk['table'],
+                    $fk['references'],
+                    !empty($fk['on_delete']) && $fk['on_delete'] !== 'NO ACTION' ? " ON DELETE {$fk['on_delete']}" : '',
+                    !empty($fk['on_update']) && $fk['on_update'] !== 'NO ACTION' ? " ON UPDATE {$fk['on_update']}" : ''
+                );
+            }
         }
 
         $sql = sprintf(
             'CREATE TABLE %s %s (%s)',
             $ifNotExists ? 'IF NOT EXISTS' : '',
             static::getTableName(),
-            implode(', ', $columns)
+            implode(', ', array_merge($columns, $foreignKeys))
         );
 
-        return Rubik::getConn()->exec($sql) !== false;
+        $conn = Rubik::getConn();
+        if (Rubik::getDriver() === Driver::SQLITE) {
+            $conn->exec('PRAGMA foreign_keys = ON;');
+        }
+
+        return $conn->exec($sql) !== false;
     }
 
     /**
@@ -92,11 +112,17 @@ trait SchemaTrait
     public static function truncateTable(): bool
     {
         $sql = sprintf(
-            'TRUNCATE TABLE %s',
+            '%s %s',
+            Rubik::getDriver() === Driver::SQLITE ? 'DELETE FROM' : 'TRUNCATE TABLE',
             static::getTableName()
         );
 
-        return Rubik::getConn()->exec($sql) !== false;
+        $conn = Rubik::getConn();
+        if (Rubik::getDriver() === Driver::SQLITE) {
+            $conn->exec('PRAGMA foreign_keys = ON;');
+        }
+
+        return $conn->exec($sql) !== false;
     }
 
     /**
@@ -113,7 +139,12 @@ trait SchemaTrait
             static::getTableName()
         );
 
-        return Rubik::getConn()->exec($sql) !== false;
+        $conn = Rubik::getConn();
+        if (Rubik::getDriver() === Driver::SQLITE) {
+            $conn->exec('PRAGMA foreign_keys = ON;');
+        }
+
+        return $conn->exec($sql) !== false;
     }
 
     /**
@@ -125,35 +156,35 @@ trait SchemaTrait
      */
     protected static function getFieldString(array $field): string
     {
-        if (!isset($field['type']) || !$field['type'] instanceof FieldEnum) {
-            throw new InvalidArgumentException('Field type must be a valid FieldEnum value.');
+        if (!isset($field['type']) || !$field['type'] instanceof Field) {
+            throw new InvalidArgumentException('Field type must be a valid Field value.');
         }
 
         $driver = Rubik::getDriver();
         $typeStr = strtoupper($field['type']->value);
 
         // Driver-specific type mapping
-        if ($driver === 'sqlite') {
+        if ($driver === Driver::SQLITE) {
             // SQLite uses affinities; map unsupported types
             $typeStr = match ($field['type']) {
-                FieldEnum::VARCHAR, FieldEnum::CHAR, FieldEnum::ENUM => 'TEXT',
-                FieldEnum::DECIMAL, FieldEnum::TINYINT => 'NUMERIC',
-                FieldEnum::FLOAT => 'REAL',
+                Field::VARCHAR, Field::CHAR, Field::ENUM => 'TEXT',
+                Field::DECIMAL, Field::TINYINT => 'NUMERIC',
+                Field::FLOAT => 'REAL',
                 default => $typeStr, // INTEGER, TEXT, REAL, BLOB, NUMERIC, BOOLEAN, DATETIME
             };
-        } elseif (in_array($driver, ['mysql', 'mariadb'])) {
+        } elseif ($driver === Driver::MYSQL) {
             // MySQL-specific formatting
-            if (in_array($field['type'], [FieldEnum::VARCHAR, FieldEnum::CHAR]) && isset($field['length'])) {
+            if (in_array($field['type'], [Field::VARCHAR, Field::CHAR]) && isset($field['length'])) {
                 $typeStr .= "({$field['length']})";
-            } elseif ($field['type'] === FieldEnum::DECIMAL && isset($field['precision'], $field['scale'])) {
+            } elseif ($field['type'] === Field::DECIMAL && isset($field['precision'], $field['scale'])) {
                 $typeStr .= "({$field['precision']},{$field['scale']})";
-            } elseif ($field['type'] === FieldEnum::ENUM && isset($field['values'])) {
+            } elseif ($field['type'] === Field::ENUM && isset($field['values'])) {
                 if (empty($field['values'])) {
                     throw new InvalidArgumentException('ENUM values cannot be empty in MySQL.');
                 }
                 $escapedValues = array_map(fn($v) => "'" . addslashes($v) . "'", $field['values']);
                 $typeStr .= '(' . implode(', ', $escapedValues) . ')';
-            } elseif ($field['type'] === FieldEnum::TINYINT && isset($field['unsigned']) && $field['unsigned']) {
+            } elseif ($field['type'] === Field::TINYINT && isset($field['unsigned']) && $field['unsigned']) {
                 $typeStr .= ' UNSIGNED';
             }
         }

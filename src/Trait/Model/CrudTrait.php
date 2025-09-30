@@ -1,6 +1,6 @@
 <?php
 
-namespace AdaiasMagdiel\Rubik\Traits;
+namespace AdaiasMagdiel\Rubik\Trait\Model;
 
 use AdaiasMagdiel\Rubik\Rubik;
 use RuntimeException;
@@ -21,7 +21,11 @@ trait CrudTrait
         $pk = static::primaryKey();
 
         if (isset($this->_data[$pk]) && !$ignore) {
-            return $this->update();
+            // Check if record exists
+            $exists = static::find($this->_data[$pk]) !== null;
+            if ($exists && $this->update()) {
+                return true;
+            }
         }
 
         $values = [];
@@ -48,7 +52,12 @@ trait CrudTrait
         $result = $stmt->execute($values);
 
         if ($result && !isset($this->_data[$pk])) {
-            $this->_data[$pk] = Rubik::getConn()->lastInsertId();
+            $this->_data[$pk] = (int)Rubik::getConn()->lastInsertId();
+            // Fetch the inserted record to populate defaults
+            $fetched = static::find($this->_data[$pk]);
+            if ($fetched) {
+                $this->_data = array_merge($this->_data, $fetched->_data);
+            }
         }
 
         $this->_dirty = [];
@@ -67,30 +76,40 @@ trait CrudTrait
             return false;
         }
 
-        $fields = static::fields();
-        $columns = array_keys($fields);
-        $values = [];
-        $placeholders = [];
+        $conn = Rubik::getConn();
+        $conn->beginTransaction();
 
-        foreach ($records as $index => $record) {
-            $rowPlaceholders = [];
-            foreach ($columns as $key) {
-                $placeholder = ":{$key}_{$index}";
-                $rowPlaceholders[] = $placeholder;
-                $values[$placeholder] = $record[$key] ?? null;
+        try {
+            for ($i = 0; $i < count($records); $i++) {
+                $record = $records[$i];
+                $columns = array_keys($record);
+                $placeholders = [];
+                $values = [];
+
+                foreach ($columns as $key) {
+                    $placeholder = ":{$key}_{$i}";
+                    $placeholders[] = $placeholder;
+                    $values[$placeholder] = $record[$key];
+                }
+
+                $sql = sprintf(
+                    'INSERT INTO %s (%s) VALUES (%s)',
+                    static::getTableName(),
+                    implode(', ', $columns),
+                    implode(', ', $placeholders)
+                );
+
+                $stmt = $conn->prepare($sql);
+                if (!$stmt->execute($values)) {
+                    throw new RuntimeException('Insert failed');
+                }
             }
-            $placeholders[] = '(' . implode(', ', $rowPlaceholders) . ')';
+            $conn->commit();
+            return true;
+        } catch (\Exception $e) {
+            $conn->rollBack();
+            return false;
         }
-
-        $sql = sprintf(
-            'INSERT INTO %s (%s) VALUES %s',
-            static::getTableName(),
-            implode(', ', $columns),
-            implode(', ', $placeholders)
-        );
-
-        $stmt = Rubik::getConn()->prepare($sql);
-        return $stmt->execute($values);
     }
 
     /**

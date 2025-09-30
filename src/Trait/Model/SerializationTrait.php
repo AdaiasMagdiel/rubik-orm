@@ -1,6 +1,6 @@
 <?php
 
-namespace AdaiasMagdiel\Rubik\Traits;
+namespace AdaiasMagdiel\Rubik\Trait\Model;
 
 trait SerializationTrait
 {
@@ -11,14 +11,7 @@ trait SerializationTrait
      */
     public function toArray(): array
     {
-        $result = $this->_data; // Includes all model data
-
-        // Optionally, include loaded relationships
-        foreach ($this->relationships as $key => $value) {
-            $result[$key] = $value;
-        }
-
-        return $result;
+        return is_array($this->_data) ? $this->_data : [];
     }
 
     /**
