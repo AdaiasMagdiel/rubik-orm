@@ -2,6 +2,7 @@
 
 namespace AdaiasMagdiel\Rubik;
 
+use AdaiasMagdiel\Rubik\Enum\Field;
 use InvalidArgumentException;
 
 class Column
@@ -9,28 +10,78 @@ class Column
     /**
      * Helper method to build a field definition array with common properties.
      *
-     * @param FieldEnum $type The field type.
+     * @param Field $type The field type.
      * @param array $props Additional type-specific properties (e.g., length, values).
      * @param bool $unique Whether the field must be unique (default: false).
      * @param bool $notNull Whether the field cannot be null (default: false).
      * @param bool $primaryKey Whether the field is the primary key (default: false).
      * @param mixed $default The default value (default: null).
      * @param bool $autoincrement Whether the field auto-increments (default: false).
+     * @param array $foreignKey Foreign key constraint details (default: []).
      * @return array The field definition array.
      */
     private static function buildField(
-        FieldEnum $type,
+        Field $type,
         array $props = [],
         bool $unique = false,
         bool $notNull = false,
         bool $primaryKey = false,
         mixed $default = null,
-        bool $autoincrement = false
+        bool $autoincrement = false,
+        array $foreignKey = []
     ): array {
         return array_merge(
-            ['type' => $type, 'unique' => $unique, 'not_null' => $notNull, 'primary_key' => $primaryKey, 'default' => $default, 'autoincrement' => $autoincrement],
+            [
+                'type' => $type,
+                'unique' => $unique,
+                'not_null' => $notNull,
+                'primary_key' => $primaryKey,
+                'default' => $default,
+                'autoincrement' => $autoincrement,
+                'foreign_key' => $foreignKey
+            ],
             $props
         );
+    }
+
+    /**
+     * Defines a FOREIGN KEY constraint for the model's table.
+     *
+     * @param string $references The column name in the referenced table.
+     * @param string $table The referenced table name.
+     * @param string $onDelete The action on deletion (e.g., 'CASCADE', 'SET NULL', 'RESTRICT', 'NO ACTION') (default: 'NO ACTION').
+     * @param string $onUpdate The action on update (e.g., 'CASCADE', 'SET NULL', 'RESTRICT', 'NO ACTION') (default: 'NO ACTION').
+     * @return array The field definition array with foreign key constraint.
+     * @throws InvalidArgumentException If parameters are invalid or unsupported.
+     */
+    public static function ForeignKey(
+        string $references,
+        string $table,
+        string $onDelete = 'NO ACTION',
+        string $onUpdate = 'NO ACTION'
+    ): array {
+        $validActions = ['CASCADE', 'SET NULL', 'RESTRICT', 'NO ACTION'];
+        $onDelete = strtoupper($onDelete);
+        $onUpdate = strtoupper($onUpdate);
+
+        if (empty($references) || empty($table)) {
+            throw new InvalidArgumentException('Foreign key references and table cannot be empty.');
+        }
+        if (!in_array($onDelete, $validActions)) {
+            throw new InvalidArgumentException("Invalid ON DELETE action: {$onDelete}. Must be one of: " . implode(', ', $validActions));
+        }
+        if (!in_array($onUpdate, $validActions)) {
+            throw new InvalidArgumentException("Invalid ON UPDATE action: {$onUpdate}. Must be one of: " . implode(', ', $validActions));
+        }
+
+        return [
+            'foreign_key' => [
+                'references' => $references,
+                'table' => $table,
+                'on_delete' => $onDelete,
+                'on_update' => $onUpdate
+            ]
+        ];
     }
 
     /**
@@ -41,6 +92,7 @@ class Column
      * @param bool $unique Whether the field must be unique (default: false).
      * @param bool $notNull Whether the field cannot be null (default: false).
      * @param int|null $default The default value (default: null).
+     * @param array $foreignKey Foreign key constraint details (default: []).
      * @return array The field definition array.
      */
     public static function Int(
@@ -48,9 +100,10 @@ class Column
         bool $primaryKey = false,
         bool $unique = false,
         bool $notNull = false,
-        ?int $default = null
+        ?int $default = null,
+        array $foreignKey = []
     ): array {
-        return self::buildField(FieldEnum::INTEGER, [], $unique, $notNull, $primaryKey, $default, $autoincrement);
+        return self::buildField(Field::INTEGER, [], $unique, $notNull, $primaryKey, $default, $autoincrement, $foreignKey);
     }
 
     /**
@@ -60,15 +113,17 @@ class Column
      * @param bool $notNull Whether the field cannot be null (default: false).
      * @param bool $primaryKey Whether the field is the primary key (default: false).
      * @param string|null $default The default value (default: null).
+     * @param array $foreignKey Foreign key constraint details (default: []).
      * @return array The field definition array.
      */
     public static function Text(
         bool $unique = false,
         bool $notNull = false,
         bool $primaryKey = false,
-        ?string $default = null
+        ?string $default = null,
+        array $foreignKey = []
     ): array {
-        return self::buildField(FieldEnum::TEXT, [], $unique, $notNull, $primaryKey, $default);
+        return self::buildField(Field::TEXT, [], $unique, $notNull, $primaryKey, $default, false, $foreignKey);
     }
 
     /**
@@ -78,15 +133,17 @@ class Column
      * @param bool $notNull Whether the field cannot be null (default: false).
      * @param bool $primaryKey Whether the field is the primary key (default: false).
      * @param float|null $default The default value (default: null).
+     * @param array $foreignKey Foreign key constraint details (default: []).
      * @return array The field definition array.
      */
     public static function Real(
         bool $unique = false,
         bool $notNull = false,
         bool $primaryKey = false,
-        ?float $default = null
+        ?float $default = null,
+        array $foreignKey = []
     ): array {
-        return self::buildField(FieldEnum::REAL, [], $unique, $notNull, $primaryKey, $default);
+        return self::buildField(Field::REAL, [], $unique, $notNull, $primaryKey, $default, false, $foreignKey);
     }
 
     /**
@@ -95,14 +152,16 @@ class Column
      * @param bool $unique Whether the field must be unique (default: false).
      * @param bool $notNull Whether the field cannot be null (default: false).
      * @param mixed $default The default value (default: null).
+     * @param array $foreignKey Foreign key constraint details (default: []).
      * @return array The field definition array.
      */
     public static function Blob(
         bool $unique = false,
         bool $notNull = false,
-        mixed $default = null
+        mixed $default = null,
+        array $foreignKey = []
     ): array {
-        return self::buildField(FieldEnum::BLOB, [], $unique, $notNull, false, $default);
+        return self::buildField(Field::BLOB, [], $unique, $notNull, false, $default, false, $foreignKey);
     }
 
     /**
@@ -112,15 +171,17 @@ class Column
      * @param bool $notNull Whether the field cannot be null (default: false).
      * @param bool $primaryKey Whether the field is the primary key (default: false).
      * @param int|float|null $default The default value (default: null).
+     * @param array $foreignKey Foreign key constraint details (default: []).
      * @return array The field definition array.
      */
     public static function Numeric(
         bool $unique = false,
         bool $notNull = false,
         bool $primaryKey = false,
-        int|float|null $default = null
+        int|float|null $default = null,
+        array $foreignKey = []
     ): array {
-        return self::buildField(FieldEnum::NUMERIC, [], $unique, $notNull, $primaryKey, $default);
+        return self::buildField(Field::NUMERIC, [], $unique, $notNull, $primaryKey, $default, false, $foreignKey);
     }
 
     /**
@@ -128,13 +189,15 @@ class Column
      *
      * @param bool $notNull Whether the field cannot be null (default: false).
      * @param bool|null $default The default value (default: null).
+     * @param array $foreignKey Foreign key constraint details (default: []).
      * @return array The field definition array.
      */
     public static function Boolean(
         bool $notNull = false,
-        ?bool $default = null
+        ?bool $default = null,
+        array $foreignKey = []
     ): array {
-        return self::buildField(FieldEnum::BOOLEAN, [], false, $notNull, false, $default);
+        return self::buildField(Field::BOOLEAN, [], false, $notNull, false, $default, false, $foreignKey);
     }
 
     /**
@@ -142,40 +205,44 @@ class Column
      *
      * @param bool $notNull Whether the field cannot be null (default: false).
      * @param string|null $default The default value (default: null).
+     * @param array $foreignKey Foreign key constraint details (default: []).
      * @return array The field definition array.
      */
     public static function DateTime(
         bool $notNull = false,
-        ?string $default = null
+        ?string $default = null,
+        array $foreignKey = []
     ): array {
-        return self::buildField(FieldEnum::DATETIME, [], false, $notNull, false, $default);
+        return self::buildField(Field::DATETIME, [], false, $notNull, false, $default, false, $foreignKey);
     }
 
     /**
      * Defines a VARCHAR or CHAR field for the model's table.
      *
-     * @param FieldEnum $type VARCHAR or CHAR.
+     * @param Field $type VARCHAR or CHAR.
      * @param int $length The maximum (VARCHAR) or fixed (CHAR) length (default: 255 for VARCHAR, 1 for CHAR).
      * @param bool $unique Whether the field must be unique (default: false).
      * @param bool $notNull Whether the field cannot be null (default: false).
      * @param bool $primaryKey Whether the field is the primary key (default: false).
      * @param string|null $default The default value (default: null).
+     * @param array $foreignKey Foreign key constraint details (default: []).
      * @return array The field definition array.
      * @throws InvalidArgumentException If length is invalid.
      */
     private static function StringField(
-        FieldEnum $type,
+        Field $type,
         int $length,
         bool $unique = false,
         bool $notNull = false,
         bool $primaryKey = false,
-        ?string $default = null
+        ?string $default = null,
+        array $foreignKey = []
     ): array {
-        $maxLength = $type === FieldEnum::VARCHAR ? 65535 : 255;
+        $maxLength = $type === Field::VARCHAR ? 65535 : 255;
         if ($length < 1 || $length > $maxLength) {
             throw new InvalidArgumentException("{$type->value} length must be between 1 and $maxLength.");
         }
-        return self::buildField($type, ['length' => $length], $unique, $notNull, $primaryKey, $default);
+        return self::buildField($type, ['length' => $length], $unique, $notNull, $primaryKey, $default, false, $foreignKey);
     }
 
     /**
@@ -186,6 +253,7 @@ class Column
      * @param bool $notNull Whether the field cannot be null (default: false).
      * @param bool $primaryKey Whether the field is the primary key (default: false).
      * @param string|null $default The default value (default: null).
+     * @param array $foreignKey Foreign key constraint details (default: []).
      * @return array The field definition array.
      */
     public static function Varchar(
@@ -193,9 +261,10 @@ class Column
         bool $unique = false,
         bool $notNull = false,
         bool $primaryKey = false,
-        ?string $default = null
+        ?string $default = null,
+        array $foreignKey = []
     ): array {
-        return self::StringField(FieldEnum::VARCHAR, $length, $unique, $notNull, $primaryKey, $default);
+        return self::StringField(Field::VARCHAR, $length, $unique, $notNull, $primaryKey, $default, $foreignKey);
     }
 
     /**
@@ -206,6 +275,7 @@ class Column
      * @param bool $notNull Whether the field cannot be null (default: false).
      * @param bool $primaryKey Whether the field is the primary key (default: false).
      * @param string|null $default The default value (default: null).
+     * @param array $foreignKey Foreign key constraint details (default: []).
      * @return array The field definition array.
      */
     public static function Char(
@@ -213,9 +283,10 @@ class Column
         bool $unique = false,
         bool $notNull = false,
         bool $primaryKey = false,
-        ?string $default = null
+        ?string $default = null,
+        array $foreignKey = []
     ): array {
-        return self::StringField(FieldEnum::CHAR, $length, $unique, $notNull, $primaryKey, $default);
+        return self::StringField(Field::CHAR, $length, $unique, $notNull, $primaryKey, $default, $foreignKey);
     }
 
     /**
@@ -227,6 +298,7 @@ class Column
      * @param bool $notNull Whether the field cannot be null (default: false).
      * @param bool $primaryKey Whether the field is the primary key (default: false).
      * @param string|null $default The default value (default: null).
+     * @param array $foreignKey Foreign key constraint details (default: []).
      * @return array The field definition array.
      * @throws InvalidArgumentException If precision or scale is invalid.
      */
@@ -236,7 +308,8 @@ class Column
         bool $unique = false,
         bool $notNull = false,
         bool $primaryKey = false,
-        ?string $default = null
+        ?string $default = null,
+        array $foreignKey = []
     ): array {
         if ($precision < 1 || $precision > 65) {
             throw new InvalidArgumentException('DECIMAL precision must be between 1 and 65.');
@@ -244,7 +317,7 @@ class Column
         if ($scale < 0 || $scale > 30 || $scale > $precision) {
             throw new InvalidArgumentException('DECIMAL scale must be between 0 and 30 and not exceed precision.');
         }
-        return self::buildField(FieldEnum::DECIMAL, ['precision' => $precision, 'scale' => $scale], $unique, $notNull, $primaryKey, $default);
+        return self::buildField(Field::DECIMAL, ['precision' => $precision, 'scale' => $scale], $unique, $notNull, $primaryKey, $default, false, $foreignKey);
     }
 
     /**
@@ -254,15 +327,17 @@ class Column
      * @param bool $notNull Whether the field cannot be null (default: false).
      * @param bool $primaryKey Whether the field is the primary key (default: false).
      * @param float|null $default The default value (default: null).
+     * @param array $foreignKey Foreign key constraint details (default: []).
      * @return array The field definition array.
      */
     public static function Float(
         bool $unique = false,
         bool $notNull = false,
         bool $primaryKey = false,
-        ?float $default = null
+        ?float $default = null,
+        array $foreignKey = []
     ): array {
-        return self::buildField(FieldEnum::FLOAT, [], $unique, $notNull, $primaryKey, $default);
+        return self::buildField(Field::FLOAT, [], $unique, $notNull, $primaryKey, $default, false, $foreignKey);
     }
 
     /**
@@ -271,13 +346,15 @@ class Column
      * @param array $values The allowed values for the ENUM.
      * @param bool $notNull Whether the field cannot be null (default: false).
      * @param string|null $default The default value (default: null).
+     * @param array $foreignKey Foreign key constraint details (default: []).
      * @return array The field definition array.
      * @throws InvalidArgumentException If values array is empty or contains non-string values.
      */
     public static function Enum(
         array $values,
         bool $notNull = false,
-        ?string $default = null
+        ?string $default = null,
+        array $foreignKey = []
     ): array {
         if (empty($values)) {
             throw new InvalidArgumentException('ENUM values array cannot be empty.');
@@ -290,7 +367,7 @@ class Column
         if ($default !== null && !in_array($default, $values, true)) {
             throw new InvalidArgumentException('Default value must be one of the ENUM values.');
         }
-        return self::buildField(FieldEnum::ENUM, ['values' => $values], false, $notNull, false, $default);
+        return self::buildField(Field::ENUM, ['values' => $values], false, $notNull, false, $default, false, $foreignKey);
     }
 
     /**
@@ -301,6 +378,7 @@ class Column
      * @param bool $notNull Whether the field cannot be null (default: false).
      * @param bool $primaryKey Whether the field is the primary key (default: false).
      * @param int|null $default The default value (default: null).
+     * @param array $foreignKey Foreign key constraint details (default: []).
      * @return array The field definition array.
      * @throws InvalidArgumentException If default value is out of range.
      */
@@ -309,7 +387,8 @@ class Column
         bool $unique = false,
         bool $notNull = false,
         bool $primaryKey = false,
-        ?int $default = null
+        ?int $default = null,
+        array $foreignKey = []
     ): array {
         if ($default !== null) {
             $min = $unsigned ? 0 : -128;
@@ -318,6 +397,6 @@ class Column
                 throw new InvalidArgumentException("TINYINT default must be between $min and $max.");
             }
         }
-        return self::buildField(FieldEnum::TINYINT, ['unsigned' => $unsigned], $unique, $notNull, $primaryKey, $default);
+        return self::buildField(Field::TINYINT, ['unsigned' => $unsigned], $unique, $notNull, $primaryKey, $default, false, $foreignKey);
     }
 }

@@ -2,6 +2,7 @@
 
 namespace AdaiasMagdiel\Rubik;
 
+use AdaiasMagdiel\Rubik\Enum\Driver;
 use PDO;
 use PDOException;
 use RuntimeException;
@@ -40,11 +41,11 @@ class Rubik
     private static ?PDO $pdo = null;
 
     /**
-     * The database driver in use (e.g., 'sqlite', 'mysql', 'mariadb').
+     * The database driver in use (e.g., Driver::SQLITE, Driver::MYSQL).
      *
-     * @var string
+     * @var Driver|null
      */
-    private static string $driver = '';
+    private static Driver|null $driver = null;
 
     /**
      * Establishes a new PDO database connection.
@@ -62,31 +63,42 @@ class Rubik
      * @throws InvalidArgumentException If the driver is missing, unsupported, or configuration is invalid.
      * @throws RuntimeException If the connection fails due to a PDOException.
      */
-    public static function connect(array $config): void
-    {
-        if (empty($config['driver'])) {
-            throw new InvalidArgumentException('Database driver must be specified.');
-        }
-
-        self::$driver = strtolower($config['driver']);
+    public static function connect(
+        Driver $driver,
+        string $user = '',
+        string $password = '',
+        string $database = '',
+        int $port = 3306,
+        string $host = 'localhost',
+        string $charset = 'utf8mb4',
+        string $path = ":memory:",
+        array $options = []
+    ): void {
+        self::$driver = $driver;
 
         // Validate SQLite path
-        if (self::$driver === 'sqlite' && (empty($config['path']) || $config['path'] === ':memory:' && $config['path'] !== ':memory:')) {
+        if (self::$driver === Driver::SQLITE && empty($path)) {
             throw new InvalidArgumentException('SQLite database path cannot be empty.');
         }
 
         try {
-            $dsn = self::buildDsn($config);
-            $options = array_merge(self::DEFAULT_PDO_OPTIONS, $config['options'] ?? []);
+            $dsn = self::buildDsn([
+                "database" => $database,
+                "port" => $port,
+                "charset" => $charset,
+                "host" => $host,
+                "path" => $path
+            ]);
+            $options = array_merge(self::DEFAULT_PDO_OPTIONS, $options);
 
             self::$pdo = new PDO(
                 $dsn,
-                $config['username'] ?? null,
-                $config['password'] ?? null,
+                $username ?? null,
+                $password ?? null,
                 $options
             );
 
-            if (self::$driver === 'sqlite') {
+            if (self::$driver === Driver::SQLITE) {
                 self::$pdo->exec('PRAGMA foreign_keys = ON;');
             }
         } catch (PDOException $e) {
@@ -125,7 +137,7 @@ class Rubik
     public static function disconnect(): void
     {
         self::$pdo = null;
-        self::$driver = '';
+        self::$driver = null;
     }
 
     /**
@@ -141,9 +153,9 @@ class Rubik
     /**
      * Retrieves the database driver in use.
      *
-     * @return string The driver name (e.g., 'sqlite', 'mysql', 'mariadb').
+     * @return The current driver (e.g., Driver::SQLITE or DRIVER::MYSQL).
      */
-    public static function getDriver(): string
+    public static function getDriver(): Driver
     {
         return self::$driver;
     }
@@ -161,8 +173,8 @@ class Rubik
     private static function buildDsn(array $config): string
     {
         return match (self::$driver) {
-            'sqlite' => sprintf('sqlite:%s', $config['path'] ?? ''),
-            'mysql', 'mariadb' => sprintf(
+            Driver::SQLITE => sprintf('sqlite:%s', $config['path'] ?? ''),
+            Driver::MYSQL => sprintf(
                 'mysql:host=%s;port=%d;dbname=%s;charset=%s',
                 $config['host'] ?? 'localhost',
                 $config['port'] ?? 3306,
@@ -170,7 +182,7 @@ class Rubik
                 $config['charset'] ?? 'utf8mb4'
             ),
             default => throw new InvalidArgumentException(
-                sprintf('Unsupported database driver: %s', self::$driver)
+                sprintf('Unsupported database driver: %s', self::$driver->value)
             ),
         };
     }
