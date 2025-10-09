@@ -65,7 +65,7 @@ class Rubik
      */
     public static function connect(
         Driver $driver,
-        string $user = '',
+        string $username = '',
         string $password = '',
         string $database = '',
         int $port = 3306,
