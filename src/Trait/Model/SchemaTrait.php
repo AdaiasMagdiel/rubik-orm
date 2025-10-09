@@ -156,50 +156,72 @@ trait SchemaTrait
      */
     protected static function getFieldString(array $field): string
     {
-        if (!isset($field['type']) || !$field['type'] instanceof Field) {
-            throw new InvalidArgumentException('Field type must be a valid Field value.');
+        if (!isset($field['type'])) {
+            throw new InvalidArgumentException('Field type is required.');
+        }
+
+        if ($field['type'] instanceof Field) {
+            $typeValue = strtoupper($field['type']->value);
+        } elseif (is_string($field['type'])) {
+            $typeValue = strtoupper(trim($field['type']));
+        } else {
+            throw new InvalidArgumentException(
+                'Field type must be either a string or an instance of AdaiasMagdiel\\Rubik\\Enum\\Field.'
+            );
         }
 
         $driver = Rubik::getDriver();
-        $typeStr = strtoupper($field['type']->value);
+        $typeStr = $typeValue;
 
-        // Driver-specific type mapping
+        // === DRIVER-SPECIFIC ADJUSTMENTS ======================================
+
         if ($driver === Driver::SQLITE) {
             // SQLite uses affinities; map unsupported types
-            $typeStr = match ($field['type']) {
-                Field::VARCHAR, Field::CHAR, Field::ENUM => 'TEXT',
-                Field::DECIMAL, Field::TINYINT => 'NUMERIC',
-                Field::FLOAT => 'REAL',
+            $typeStr = match ($typeValue) {
+                'VARCHAR', 'CHAR', 'ENUM', 'SET' => 'TEXT',
+                'DECIMAL', 'NUMERIC', 'TINYINT' => 'NUMERIC',
+                'FLOAT', 'DOUBLE', 'REAL' => 'REAL',
                 default => $typeStr, // INTEGER, TEXT, REAL, BLOB, NUMERIC, BOOLEAN, DATETIME
             };
         } elseif ($driver === Driver::MYSQL) {
             // MySQL-specific formatting
-            if (in_array($field['type'], [Field::VARCHAR, Field::CHAR]) && isset($field['length'])) {
+            $typeUpper = strtoupper($typeValue);
+
+            if (in_array($typeUpper, ['VARCHAR', 'CHAR', 'VARBINARY', 'BINARY']) && isset($field['length'])) {
                 $typeStr .= "({$field['length']})";
-            } elseif ($field['type'] === Field::DECIMAL && isset($field['precision'], $field['scale'])) {
+            } elseif (
+                in_array($typeUpper, ['DECIMAL', 'NUMERIC', 'FLOAT', 'DOUBLE'])
+                && isset($field['precision'], $field['scale'])
+            ) {
                 $typeStr .= "({$field['precision']},{$field['scale']})";
-            } elseif ($field['type'] === Field::ENUM && isset($field['values'])) {
+            } elseif ($typeUpper === 'ENUM' && isset($field['values'])) {
                 if (empty($field['values'])) {
                     throw new InvalidArgumentException('ENUM values cannot be empty in MySQL.');
                 }
                 $escapedValues = array_map(fn($v) => "'" . addslashes($v) . "'", $field['values']);
                 $typeStr .= '(' . implode(', ', $escapedValues) . ')';
-            } elseif ($field['type'] === Field::TINYINT && isset($field['unsigned']) && $field['unsigned']) {
+            } elseif ($typeUpper === 'TINYINT' && ($field['unsigned'] ?? false)) {
                 $typeStr .= ' UNSIGNED';
             }
         }
 
+        // === GENERIC FIELD ATTRIBUTES =========================================
+
         $parts = [
             $typeStr,
-            $field['primary_key'] ?? false ? 'PRIMARY KEY' : '',
-            $field['autoincrement'] ?? false ? ($driver === 'mysql' ? 'AUTO_INCREMENT' : 'AUTOINCREMENT') : '',
-            $field['unique'] ?? false ? 'UNIQUE' : '',
-            $field['not_null'] ?? false ? 'NOT NULL' : '',
+            ($field['primary_key'] ?? false) ? 'PRIMARY KEY' : '',
+            ($field['auto_increment'] ?? $field['autoincrement'] ?? false)
+                ? ($driver === Driver::MYSQL ? 'AUTO_INCREMENT' : 'AUTOINCREMENT')
+                : '',
+            ($field['unique'] ?? false) ? 'UNIQUE' : '',
+            ($field['not_null'] ?? false) ? 'NOT NULL' : '',
             isset($field['default']) ? sprintf('DEFAULT %s', self::escapeDefaultValue($field['default'])) : '',
+            isset($field['on_update']) ? sprintf('ON UPDATE %s', self::escapeDefaultValue($field['on_update'])) : '',
         ];
 
-        return implode(' ', array_filter($parts));
+        return implode(' ', array_filter($parts, fn($p) => $p !== ''));
     }
+
 
     /**
      * Escapes a default value for use in SQL field definitions.
