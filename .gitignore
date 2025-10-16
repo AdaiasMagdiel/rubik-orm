@@ -1,3 +1,6 @@
 vendor/
+.coverage/
+
 *.db3
+*.bat
 index.php
