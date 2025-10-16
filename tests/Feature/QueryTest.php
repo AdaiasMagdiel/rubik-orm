@@ -3,6 +3,7 @@
 use AdaiasMagdiel\Rubik\Enum\Driver;
 use AdaiasMagdiel\Rubik\Query;
 use AdaiasMagdiel\Rubik\Rubik;
+use AdaiasMagdiel\Rubik\SQL;
 
 beforeAll(function () {
     Rubik::connect(driver: Driver::SQLITE, path: ':memory:');
@@ -203,4 +204,24 @@ test('hydrateModels returns objects if model is defined', function () {
     $data = [['id' => 1, 'name' => 'X']];
     $hydrated = $ref->invoke($q, $data);
     expect($hydrated[0])->toBeInstanceOf(\Tests\Stubs\FakeModel::class);
+});
+
+test('SQL::raw works in SELECT expressions', function () {
+    $q = (new Query())->setTable('users')->select(['id', SQL::raw('LENGTH(name) AS len')]);
+    $sql = $q->getSql();
+
+    expect($sql)->toContain('LENGTH(name) AS len');
+});
+
+test('SQL::raw works in WHERE conditions', function () {
+    $q = (new Query())->setTable('users')->where('created_at', '>=', SQL::raw('CURRENT_TIMESTAMP'));
+    $sql = $q->getSql();
+
+    expect($sql)->toContain('created_at >= CURRENT_TIMESTAMP');
+});
+
+test('SQL::raw works in UPDATE statements', function () {
+    $q = (new Query())->setTable('users')->where('id', 1);
+    $result = $q->update(['age' => SQL::raw('age + 1')]);
+    expect($result)->toBeTrue();
 });
