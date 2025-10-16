@@ -172,6 +172,10 @@ class Rubik
      */
     private static function buildDsn(array $config): string
     {
+        if (!self::$driver instanceof Driver) {
+            throw new InvalidArgumentException('No valid database driver is set.');
+        }
+
         return match (self::$driver) {
             Driver::SQLITE => sprintf('sqlite:%s', $config['path'] ?? ''),
             Driver::MYSQL => sprintf(
