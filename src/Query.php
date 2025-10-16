@@ -182,10 +182,15 @@ class Query
 
         $sets = [];
         foreach ($data as $key => $value) {
+            if ($value instanceof SQL) {
+                $sets[] = "$key = $value";
+                continue;
+            }
             $placeholder = ":set_{$key}_" . count($this->bindings);
             $sets[] = "$key = $placeholder";
             $this->bindings[$placeholder] = $value;
         }
+
 
         $this->operation = 'UPDATE';
         $sql = sprintf(
@@ -359,12 +364,20 @@ class Query
         if (!in_array($op, ['=', '<>', '<', '>', '<=', '>=', 'LIKE'])) {
             throw new InvalidArgumentException("Invalid operator: {$op}");
         }
+
+        if ($value instanceof SQL) {
+            $condition = sprintf('%s %s %s', $key, $op, $value);
+            $this->where[] = empty($this->where) ? $condition : "$conjunction $condition";
+            return;
+        }
+
         $placeholderKey = str_replace('.', '_', $key) . '_' . count($this->bindings);
         $placeholder = ':' . $placeholderKey;
         $condition = sprintf('%s %s %s', $key, $op, $placeholder);
         $this->where[] = empty($this->where) ? $condition : "$conjunction $condition";
         $this->bindings[$placeholder] = $value;
     }
+
 
     private function hydrateModels(array $results): array
     {
