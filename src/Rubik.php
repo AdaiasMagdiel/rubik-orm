@@ -161,6 +161,29 @@ class Rubik
     }
 
     /**
+     * Forcefully sets the current database driver.
+     *
+     * ⚠️ Intended for testing or internal debugging only.
+     * This method does not establish or validate a database connection;
+     * it simply overrides the internal static driver reference used
+     * for driver-specific logic (e.g., SQL syntax differences).
+     *
+     * Example:
+     * ```php
+     * Rubik::setDriver(Driver::MYSQL);
+     * ```
+     *
+     * @param \AdaiasMagdiel\Rubik\Enum\Driver $driver
+     *        The driver to set manually (e.g., Driver::MYSQL, Driver::SQLITE).
+     *
+     * @return void
+     */
+    public static function setDriver(\AdaiasMagdiel\Rubik\Enum\Driver $driver): void
+    {
+        self::$driver = $driver;
+    }
+
+    /**
      * Builds the Data Source Name (DSN) string for the PDO connection.
      *
      * Constructs the DSN based on the driver and configuration settings, supporting
