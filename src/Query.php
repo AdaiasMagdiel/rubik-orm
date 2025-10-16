@@ -154,11 +154,25 @@ class Query
         return $this;
     }
 
-    public function delete(): self
+    public function delete(): bool
     {
         $this->operation = 'DELETE';
-        return $this;
+
+        $sql = sprintf(
+            'DELETE FROM %s%s',
+            $this->table,
+            $this->buildWhereClause() ? ' ' . $this->buildWhereClause() : ''
+        );
+
+        $stmt = Rubik::getConn()->prepare($sql);
+        if ($stmt === false) {
+            $error = Rubik::getConn()->errorInfo();
+            throw new RuntimeException("Failed to prepare delete: {$sql} - Error: {$error[2]}");
+        }
+
+        return $stmt->execute($this->bindings);
     }
+
 
     public function update(array $data): bool
     {
