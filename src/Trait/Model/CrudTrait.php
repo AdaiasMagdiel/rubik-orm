@@ -100,8 +100,13 @@ trait CrudTrait
                 );
 
                 $stmt = $conn->prepare($sql);
-                if (!$stmt->execute($values)) {
-                    throw new RuntimeException('Insert failed');
+                if ($stmt === false) {
+                    throw new RuntimeException("Failed to prepare SQL: {$sql}");
+                }
+
+                if ($stmt === false) {
+                    $err = $conn->errorInfo();
+                    throw new RuntimeException("Failed to prepare SQL: {$sql} - Error: {$err[2]}");
                 }
             }
             $conn->commit();
