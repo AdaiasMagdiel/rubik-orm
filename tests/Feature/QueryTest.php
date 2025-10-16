@@ -104,10 +104,12 @@ test('limit and offset throw on negative values and apply correctly', function (
     expect($sql)->toContain('LIMIT 2')->and($sql)->toContain('OFFSET 1');
 });
 
-test('delete sets operation and builds correct SQL', function () {
-    $q = (new Query())->setTable('users')->delete()->where('id', 1);
+test('delete builds correct SQL', function () {
+    $q = (new Query())->setTable('users')->where('id', 1);
+    $q->delete();
     expect($q->getSql())->toContain('DELETE FROM users WHERE id =');
 });
+
 
 test('update returns true for valid data and false for empty array', function () {
     $q = (new Query())->setTable('users')->where('id', 1);
@@ -148,13 +150,16 @@ test('paginate throws on invalid page or perPage', function () {
     expect(fn() => $q->paginate(1, 0))->toThrow(InvalidArgumentException::class);
 });
 
-test('exec executes a DELETE and returns boolean', function () {
+test('delete executes a DELETE and returns boolean', function () {
     $pdo = Rubik::getConn();
     $pdo->exec("INSERT INTO users (name, age, active) VALUES ('Temp', 99, 0)");
 
-    $q = (new Query())->setTable('users')->delete()->where('name', 'Temp');
-    expect($q->exec())->toBeTrue();
+    $q = (new Query())->setTable('users')->where('name', 'Temp');
+    $result = $q->delete();
+
+    expect($result)->toBeTrue();
 });
+
 
 test('getSql throws when table not set or when update mode', function () {
     $q = new Query();
