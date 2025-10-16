@@ -76,19 +76,15 @@ trait QueryTrait
 
         $relatedTable = $related::getTableName();
         $query = (new Query())->setModel($related);
-        $query->join(
-            $relatedTable,
-            sprintf('%s.%s', static::getTableName(), $foreignKey),
-            '=',
-            sprintf('%s.%s', $relatedTable, $ownerKey)
-        );
 
+        // Simple direct filter (no JOIN) — avoids ambiguity
         if (isset($this->_data[$foreignKey])) {
             $query->where(sprintf('%s.%s', $relatedTable, $ownerKey), $this->_data[$foreignKey]);
         }
 
         return $query;
     }
+
 
     /**
      * Defines a hasOne relationship.
