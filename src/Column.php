@@ -753,12 +753,10 @@ final class Column
         }
 
         return [
-            'foreign_key' => [
-                'references' => $references,
-                'table'      => $table,
-                'on_delete'  => $onDelete,
-                'on_update'  => $onUpdate,
-            ],
+            'table'      => $table,
+            'references' => $references,
+            'on_delete'  => $onDelete,
+            'on_update'  => $onUpdate,
         ];
     }
 }
