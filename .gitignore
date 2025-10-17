@@ -1,6 +1,7 @@
 vendor/
 .coverage/
 .venv/
+site/
 
 *.db3
 *.bat
