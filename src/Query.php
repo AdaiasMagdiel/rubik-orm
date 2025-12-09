@@ -405,7 +405,6 @@ class Query
             return;
         }
 
-        // DEFAULT: usar placeholder
         $placeholderKey = str_replace('.', '_', $key) . '_' . count($this->bindings);
         $placeholder = ':' . $placeholderKey;
 
