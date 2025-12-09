@@ -361,23 +361,58 @@ class Query
     private function addCondition(string $key, mixed $value, string $op, string $conjunction): void
     {
         $op = strtoupper($op);
-        if (!in_array($op, ['=', '<>', '<', '>', '<=', '>=', 'LIKE'])) {
+
+        $validOps = ['=', '<>', '<', '>', '<=', '>=', 'LIKE', 'ILIKE', 'IS', 'IS NOT', 'IN'];
+
+        if (!in_array($op, $validOps, true)) {
             throw new InvalidArgumentException("Invalid operator: {$op}");
         }
 
+        // NULL CHECKS
+        if ($op === 'IS' || $op === 'IS NOT') {
+            // value must be NULL
+            if (!is_null($value)) {
+                throw new InvalidArgumentException("Operator {$op} requires NULL value");
+            }
+
+            $condition = sprintf('%s %s NULL', $key, $op);
+            $this->where[] = empty($this->where) ? $condition : "$conjunction $condition";
+            return;
+        }
+
+        // IN (...)
+        if ($op === 'IN') {
+            if (!is_array($value) || empty($value)) {
+                throw new InvalidArgumentException("IN operator requires a non-empty array");
+            }
+
+            $placeholders = [];
+            foreach ($value as $i => $val) {
+                $ph = ':' . str_replace('.', '_', $key) . "_in_{$i}";
+                $placeholders[] = $ph;
+                $this->bindings[$ph] = $val;
+            }
+
+            $condition = sprintf('%s IN (%s)', $key, implode(', ', $placeholders));
+            $this->where[] = empty($this->where) ? $condition : "$conjunction $condition";
+            return;
+        }
+
+        // SQL RAW VALUES
         if ($value instanceof SQL) {
             $condition = sprintf('%s %s %s', $key, $op, $value);
             $this->where[] = empty($this->where) ? $condition : "$conjunction $condition";
             return;
         }
 
+        // DEFAULT: usar placeholder
         $placeholderKey = str_replace('.', '_', $key) . '_' . count($this->bindings);
         $placeholder = ':' . $placeholderKey;
+
         $condition = sprintf('%s %s %s', $key, $op, $placeholder);
         $this->where[] = empty($this->where) ? $condition : "$conjunction $condition";
         $this->bindings[$placeholder] = $value;
     }
-
 
     private function hydrateModels(array $results): array
     {
