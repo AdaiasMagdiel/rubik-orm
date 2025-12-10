@@ -413,6 +413,113 @@ class Query
         $this->bindings[$placeholder] = $value;
     }
 
+    private function resolveInsertedIds(PDOStatement $stmt, array $rows): array
+    {
+        // Detect primary key
+        $pk = $this->model ? $this->model::primaryKey() : 'id';
+
+        // =============================
+        // 1. Table – uses RETURNING (PostgreSQL, MySQL >= 8.0.22)
+        // =============================
+        $driver = Rubik::getConn()->getAttribute(PDO::ATTR_DRIVER_NAME);
+
+        $supportsReturning =
+            in_array($driver, ['pgsql']) ||
+            ($driver === 'mysql' && version_compare(Rubik::getConn()->getAttribute(PDO::ATTR_SERVER_VERSION), '8.0.22', '>='));
+
+        if ($supportsReturning) {
+
+            $returned = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            if (!empty($returned) && isset($returned[0][$pk])) {
+                return array_map(fn($row) => $row[$pk], $returned);
+            }
+        }
+
+        // =============================
+        // 2. Manual id
+        // =============================
+        $allHaveManualId = true;
+
+        foreach ($rows as $r) {
+            if (!array_key_exists($pk, $r)) {
+                $allHaveManualId = false;
+                break;
+            }
+        }
+
+        if ($allHaveManualId) {
+            return array_map(fn($r) => $r[$pk], $rows);
+        }
+
+        // =============================
+        // 3. AUTO INCREMENT (MySQL, SQLite)
+        // =============================
+        $lastId = Rubik::getConn()->lastInsertId();
+
+        if (!$lastId) {
+            return [];
+        }
+
+        $last = (int)$lastId;
+        $count = count($rows);
+
+        if ($count === 1) {
+            return [$last];
+        }
+
+        $first = $last - $count + 1;
+
+        return range($first, $last);
+    }
+
+    public function insert(array $data)
+    {
+        if (empty($data)) {
+            throw new InvalidArgumentException("Insert data cannot be empty");
+        }
+
+        $rows = isset($data[0]) && is_array($data[0])
+            ? $data
+            : [$data];
+
+        $columns = array_keys($rows[0]);
+        $colList = implode(', ', $columns);
+
+        $placeholdersRows = [];
+        $this->operation = 'INSERT';
+
+        foreach ($rows as $rowIndex => $row) {
+            $placeholders = [];
+
+            foreach ($columns as $col) {
+                $ph = ":{$col}_{$rowIndex}";
+                $placeholders[] = $ph;
+                $this->bindings[$ph] = $row[$col];
+            }
+
+            $placeholdersRows[] = '(' . implode(', ', $placeholders) . ')';
+        }
+
+        $sql = sprintf(
+            "INSERT INTO %s (%s) VALUES %s",
+            $this->table,
+            $colList,
+            implode(', ', $placeholdersRows)
+        );
+
+        $stmt = Rubik::getConn()->prepare($sql);
+        if (!$stmt) {
+            $error = Rubik::getConn()->errorInfo();
+            throw new RuntimeException("Failed to prepare INSERT: {$sql} - {$error[2]}");
+        }
+
+        $stmt->execute($this->bindings);
+
+        // Universal ID resolver
+        return $this->resolveInsertedIds($stmt, $rows);
+    }
+
     private function hydrateModels(array $results): array
     {
         if (!$this->model) {
