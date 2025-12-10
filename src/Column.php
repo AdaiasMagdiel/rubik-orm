@@ -405,6 +405,11 @@ final class Column
         if ($len < 1 || $len > 65535) {
             throw new InvalidArgumentException('Length must be between 1 and 65535.');
         }
+
+        $default = $p['default'] ?? null;
+        if ($default !== null && !is_string($default) && !self::isSqlRaw($default)) {
+            throw new InvalidArgumentException('VARCHAR/CHAR default must be string or SQL::raw().');
+        }
     }
 
     /**
@@ -424,6 +429,15 @@ final class Column
         $default = $p['default'] ?? null;
         if ($default !== null && !is_numeric($default) && !self::isSqlRaw($default)) {
             throw new InvalidArgumentException('DECIMAL default must be numeric or SQL::raw().');
+        }
+
+        if ($default !== null && is_numeric($default) && !self::isSqlRaw($default)) {
+            $maxValue = pow(10, $precision - $scale) - pow(10, -$scale);
+            if (abs($default) > $maxValue) {
+                throw new InvalidArgumentException(
+                    "DECIMAL default exceeds precision($precision, $scale) limits."
+                );
+            }
         }
     }
 
@@ -493,6 +507,13 @@ final class Column
         $default = $p['default'] ?? null;
         if ($default !== null && !is_float($default) && !is_int($default) && !self::isSqlRaw($default)) {
             throw new InvalidArgumentException('FLOAT/REAL/DOUBLE default must be numeric or SQL::raw().');
+        }
+
+        $precision = $p['precision'] ?? null;
+        $scale = $p['scale'] ?? null;
+
+        if ($precision !== null && ($precision < 1 || $precision > 53)) {
+            throw new InvalidArgumentException('FLOAT precision must be between 1 and 53.');
         }
     }
 
