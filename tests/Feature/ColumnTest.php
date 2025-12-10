@@ -108,6 +108,11 @@ test('throws on invalid UUID format', function () {
     Column::Uuid(default: 'not-a-uuid');
 })->throws(InvalidArgumentException::class);
 
+test('accepts array as JSON default', function () {
+    $col = Column::Json(default: ['a' => 1]);
+    expect($col['default'])->toBe(['a' => 1]);
+});
+
 // ───────────────────────────────────────────────
 //  Validators: ENUM and SET
 // ───────────────────────────────────────────────
@@ -162,10 +167,11 @@ test('throws when YEAR out of range', function () {
 
 test('creates valid foreign key definition', function () {
     $fk = Column::ForeignKey('id', 'users', 'CASCADE', 'SET NULL');
-    expect($fk['foreign_key'])
-        ->toHaveKeys(['references', 'table', 'on_delete', 'on_update'])
-        ->and($fk['foreign_key']['on_delete'])->toBe('CASCADE')
-        ->and($fk['foreign_key']['on_update'])->toBe('SET NULL');
+    expect($fk)
+        ->toBeArray()
+        ->and($fk)->toHaveKeys(['references', 'table', 'on_delete', 'on_update'])
+        ->and($fk['on_delete'])->toBe('CASCADE')
+        ->and($fk['on_update'])->toBe('SET NULL');
 });
 
 test('throws when references or table empty', function () {
@@ -176,9 +182,10 @@ test('throws for invalid onDelete action', function () {
     Column::ForeignKey('id', 'users', 'INVALID');
 })->throws(InvalidArgumentException::class);
 
-test('accepts underscore format in onDelete', function () {
+test('accepts underscore format in onDelete and onUpdate', function () {
     $fk = Column::ForeignKey('id', 'users', 'SET_NULL', 'NO_ACTION');
-    expect($fk['foreign_key']['on_delete'])->toBe('SET NULL');
+    expect($fk['on_delete'])->toBe('SET NULL')
+        ->and($fk['on_update'])->toBe('NO ACTION');
 });
 
 // ───────────────────────────────────────────────
@@ -290,8 +297,9 @@ test('MySQL: supports DECIMAL(10,2)', function () {
 
 test('MySQL: ForeignKey supports ON DELETE CASCADE', function () {
     $fk = Column::ForeignKey('user_id', 'users', 'CASCADE', 'SET NULL');
-    expect($fk['foreign_key']['on_delete'])->toBe('CASCADE')
-        ->and($fk['foreign_key']['on_update'])->toBe('SET NULL');
+    expect($fk['on_delete'])
+        ->toBe('CASCADE')
+        ->and($fk['on_update'])->toBe('SET NULL');
 });
 
 // ───────────────────────────────────────────────
@@ -343,4 +351,38 @@ test('validates BLOB and BINARY types', function () {
 
 test('throws for invalid BINARY length', function () {
     Column::Binary(length: 0);
+})->throws(InvalidArgumentException::class);
+
+test('throws when VARCHAR default is not string', function () {
+    Column::Varchar(default: 123);
+})->throws(InvalidArgumentException::class);
+
+test('throws when CHAR length is too small', function () {
+    Column::Char(length: 0);
+})->throws(InvalidArgumentException::class);
+
+// VARCHAR/CHAR validation
+test('throws when CHAR default is not string', function () {
+    Column::Char(default: 123);
+})->throws(InvalidArgumentException::class);
+
+test('accepts SQL::raw for VARCHAR default', function () {
+    $sql = SQL::raw("'default'");
+    $col = Column::Varchar(default: $sql);
+    expect($col['default'])->toBe($sql);
+});
+
+// DECIMAL range validation
+test('throws when DECIMAL default exceeds precision', function () {
+    Column::Decimal(precision: 5, scale: 2, default: 999999.99);
+})->throws(InvalidArgumentException::class);
+
+test('accepts DECIMAL within precision range', function () {
+    $col = Column::Decimal(precision: 5, scale: 2, default: 999.99);
+    expect($col['default'])->toBe(999.99);
+});
+
+// FLOAT precision validation
+test('throws when FLOAT precision is invalid', function () {
+    Column::Float(precision: 100);
 })->throws(InvalidArgumentException::class);
