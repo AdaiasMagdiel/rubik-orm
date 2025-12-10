@@ -233,7 +233,8 @@ describe('CrudTrait', function () {
 
         // simulate failure (bad column)
         $bad = [['invalid_col' => 'oops']];
-        expect(UserModel::insertMany($bad))->toBeFalse();
+        expect(fn() => UserModel::insertMany($bad))
+            ->toThrow(RuntimeException::class);
     });
 });
 
