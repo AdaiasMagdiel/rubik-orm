@@ -2,35 +2,32 @@
 
 namespace AdaiasMagdiel\Rubik\Trait\Model;
 
+use AdaiasMagdiel\Rubik\Enum\Driver;
 use AdaiasMagdiel\Rubik\Rubik;
 use RuntimeException;
 
 trait CrudTrait
 {
     /**
-     * Saves the model instance to the database.
-     *
-     * Performs an INSERT if the primary key is not set, or an UPDATE if it is.
-     *
-     * @param bool $ignore If true, uses INSERT OR IGNORE to skip duplicates (default: false).
-     * @return bool True if the save was successful, false otherwise.
+     * Saves the model instance: INSERT or UPDATE.
      */
     public function save(bool $ignore = false): bool
     {
-        $fields = static::fields();
         $pk = static::primaryKey();
+        $isNew = !isset($this->_data[$pk]);
 
-        if (isset($this->_data[$pk]) && !$ignore) {
-            // Check if record exists
-            $exists = static::find($this->_data[$pk]) !== null;
-            if ($exists && $this->update()) {
-                return true;
-            }
+        if (!$isNew) {
+            // Existing record → UPDATE
+            $result = $this->update();
+            $this->_dirty = [];
+            return $result;
         }
 
-        $values = [];
+        // INSERT
+        $fields = static::fields();
         $columns = [];
         $placeholders = [];
+        $values = [];
 
         foreach ($fields as $key => $_) {
             if (array_key_exists($key, $this->_data)) {
@@ -40,35 +37,51 @@ trait CrudTrait
             }
         }
 
+        // Driver-specific IGNORE
+        $insertKeyword = match (Rubik::getDriver()) {
+            Driver::SQLITE  => $ignore ? 'INSERT OR IGNORE' : 'INSERT',
+            Driver::MYSQL   => $ignore ? 'INSERT IGNORE'    : 'INSERT',
+            // Driver::PGSQL   => 'INSERT', // soon
+            default   => 'INSERT'
+        };
+
         $sql = sprintf(
             '%s INTO %s (%s) VALUES (%s)',
-            $ignore ? 'INSERT OR IGNORE' : 'INSERT',
+            $insertKeyword,
             static::getTableName(),
             implode(', ', $columns),
             implode(', ', $placeholders)
         );
 
+        // PostgreSQL conflict handling - soon
+        // if ($ignore && Rubik::getDriver() === Driver::PGSQL) {
+        //     $sql .= ' ON CONFLICT DO NOTHING';
+        // }
+
         $stmt = Rubik::getConn()->prepare($sql);
         $result = $stmt->execute($values);
 
-        if ($result && !isset($this->_data[$pk])) {
+        if (!$result) {
+            return false;
+        }
+
+        // Retrieve new PK
+        if ($isNew) {
             $this->_data[$pk] = (int)Rubik::getConn()->lastInsertId();
-            // Fetch the inserted record to populate defaults
-            $fetched = static::find($this->_data[$pk]);
-            if ($fetched) {
-                $this->_data = array_merge($this->_data, $fetched->_data);
+
+            // Reload defaults
+            $fresh = static::find($this->_data[$pk]);
+            if ($fresh) {
+                $this->_data = $fresh->_data;
             }
         }
 
         $this->_dirty = [];
-        return $result;
+        return true;
     }
 
     /**
-     * Inserts multiple records into the model's table.
-     *
-     * @param array $records Array of associative arrays containing column names and values.
-     * @return bool True if the insert was successful, false if no records were provided.
+     * Bulk insert with column validation.
      */
     public static function insertMany(array $records): bool
     {
@@ -76,20 +89,28 @@ trait CrudTrait
             return false;
         }
 
+        $validColumns = array_keys(static::fields());
         $conn = Rubik::getConn();
         $conn->beginTransaction();
 
         try {
-            for ($i = 0; $i < count($records); $i++) {
-                $record = $records[$i];
+            foreach ($records as $i => $record) {
+
+                // Validate keys
+                foreach (array_keys($record) as $col) {
+                    if (!in_array($col, $validColumns, true)) {
+                        throw new RuntimeException("Invalid column: {$col}");
+                    }
+                }
+
                 $columns = array_keys($record);
                 $placeholders = [];
                 $values = [];
 
                 foreach ($columns as $key) {
-                    $placeholder = ":{$key}_{$i}";
-                    $placeholders[] = $placeholder;
-                    $values[$placeholder] = $record[$key];
+                    $ph = ":{$key}_{$i}";
+                    $placeholders[] = $ph;
+                    $values[$ph] = $record[$key];
                 }
 
                 $sql = sprintf(
@@ -100,30 +121,25 @@ trait CrudTrait
                 );
 
                 $stmt = $conn->prepare($sql);
-                if ($stmt === false) {
-                    throw new RuntimeException("Failed to prepare SQL: {$sql}");
-                }
 
                 if ($stmt === false) {
                     $err = $conn->errorInfo();
                     throw new RuntimeException("Failed to prepare SQL: {$sql} - Error: {$err[2]}");
                 }
+
+                $stmt->execute($values);
             }
+
             $conn->commit();
             return true;
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             $conn->rollBack();
-            return false;
+            throw $e;
         }
     }
 
     /**
-     * Updates the model instance in the database.
-     *
-     * Only updates fields marked as dirty since the last save.
-     *
-     * @return bool True if the update was successful or no changes were needed, false otherwise.
-     * @throws RuntimeException If the primary key is not set.
+     * Updates only dirty fields.
      */
     public function update(): bool
     {
@@ -132,41 +148,38 @@ trait CrudTrait
             throw new RuntimeException('Cannot update record without primary key.');
         }
 
-        $values = [];
+        if (empty($this->_dirty)) {
+            return true;
+        }
+
         $sets = [];
+        $values = [];
 
         foreach ($this->_dirty as $key => $_) {
-            if ($key !== $pk && array_key_exists($key, $this->_data)) {
+            if ($key !== $pk) {
                 $sets[] = "$key = :$key";
                 $values[":$key"] = $this->_data[$key];
             }
         }
 
-        if (empty($sets)) {
-            return true;
-        }
+        $values[":pk"] = $this->_data[$pk];
 
-        $values[":$pk"] = $this->_data[$pk];
         $sql = sprintf(
-            'UPDATE %s SET %s WHERE %s = :%s',
+            'UPDATE %s SET %s WHERE %s = :pk',
             static::getTableName(),
             implode(', ', $sets),
-            $pk,
             $pk
         );
 
         $stmt = Rubik::getConn()->prepare($sql);
         $result = $stmt->execute($values);
-        $this->_dirty = [];
 
+        $this->_dirty = [];
         return $result;
     }
 
     /**
-     * Deletes the model instance from the database.
-     *
-     * @return bool True if the deletion was successful, false otherwise.
-     * @throws RuntimeException If the primary key is not set.
+     * Deletes the model instance.
      */
     public function delete(): bool
     {
@@ -183,6 +196,7 @@ trait CrudTrait
         );
 
         $stmt = Rubik::getConn()->prepare($sql);
-        return $stmt->execute([":$pk" => $this->_data[$pk]]);
+
+        return $stmt->execute([$pk => $this->_data[$pk]]);
     }
 }
