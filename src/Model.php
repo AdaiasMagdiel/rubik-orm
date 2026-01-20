@@ -25,6 +25,9 @@ abstract class Model implements JsonSerializable
     /** @var array Cache for loaded relationship results. */
     protected array $_relationships = [];
 
+    /** @var bool Indicates if the model exists in the database. */
+    public bool $exists = false;
+
     /**
      * Defines the relationships for the model.
      *
@@ -133,4 +136,13 @@ abstract class Model implements JsonSerializable
 
         return null;
     }
+
+    protected function beforeSave(): void {}
+    protected function afterSave(): void {}
+    protected function beforeCreate(): void {}
+    protected function afterCreate(): void {}
+    protected function beforeUpdate(): void {}
+    protected function afterUpdate(): void {}
+    protected function beforeDelete(): void {}
+    protected function afterDelete(): void {}
 }
