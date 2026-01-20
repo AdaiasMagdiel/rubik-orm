@@ -120,6 +120,12 @@ class Query
      */
     private array $queryLog = [];
 
+    /**
+     * Relationships to eager load.
+     * @var array<int, string>
+     */
+    private array $eagerLoad = [];
+
     // ============================================================================
     // CONFIGURATION METHODS
     // ============================================================================
@@ -158,6 +164,21 @@ class Query
         $this->model = $model;
         $this->table = $this->sanitizeIdentifier($model::getTableName());
 
+        return $this;
+    }
+
+    /**
+     * Set relationships to be eager loaded.
+     *
+     * @param string|array $relations Relationship names.
+     * @return self
+     */
+    public function with(string|array $relations): self
+    {
+        $this->eagerLoad = array_merge(
+            $this->eagerLoad,
+            is_string($relations) ? func_get_args() : $relations
+        );
         return $this;
     }
 
@@ -250,6 +271,91 @@ class Query
 
         $this->select = array_unique($sanitizedFields);
         return $this;
+    }
+
+    /**
+     * Eager loads relationships for the given models.
+     */
+    private function eagerLoadRelations(array $models): void
+    {
+        $definitions = $this->model::relationships();
+
+        foreach ($this->eagerLoad as $relationName) {
+            if (!isset($definitions[$relationName])) {
+                continue;
+            }
+
+            $config = $definitions[$relationName];
+            $type = $config['type'] ?? '';
+            $relatedClass = $config['related'];
+
+            $ids = [];
+
+            if ($type === 'belongsTo') {
+                $foreignKey = $config['foreignKey'] ?? $relationName . '_id';
+                $ownerKey = $config['ownerKey'] ?? 'id';
+
+                foreach ($models as $model) {
+                    if (isset($model->$foreignKey)) {
+                        $ids[] = $model->$foreignKey;
+                    }
+                }
+                $ids = array_unique($ids);
+
+                if (empty($ids)) continue;
+
+                $relatedModels = (new Query())
+                    ->setModel($relatedClass)
+                    ->whereIn($ownerKey, $ids)
+                    ->all();
+
+                $dictionary = [];
+                foreach ($relatedModels as $rel) {
+                    $dictionary[$rel->$ownerKey] = $rel;
+                }
+
+                foreach ($models as $model) {
+                    $fkValue = $model->$foreignKey ?? null;
+                    if ($fkValue && isset($dictionary[$fkValue])) {
+                        $model->setRelation($relationName, $dictionary[$fkValue]);
+                    }
+                }
+            } elseif ($type === 'hasMany' || $type === 'hasOne') {
+                $localKey = $config['localKey'] ?? 'id';
+                $foreignKey = $config['foreignKey'];
+
+                foreach ($models as $model) {
+                    if (isset($model->$localKey)) {
+                        $ids[] = $model->$localKey;
+                    }
+                }
+                $ids = array_unique($ids);
+
+                if (empty($ids)) continue;
+
+                $relatedModels = (new Query())
+                    ->setModel($relatedClass)
+                    ->whereIn($foreignKey, $ids)
+                    ->all();
+
+                $dictionary = [];
+                foreach ($relatedModels as $rel) {
+                    $fkVal = $rel->$foreignKey;
+                    $dictionary[$fkVal][] = $rel;
+                }
+
+                foreach ($models as $model) {
+                    $pkValue = $model->$localKey ?? null;
+                    if ($pkValue && isset($dictionary[$pkValue])) {
+                        $value = ($type === 'hasOne')
+                            ? $dictionary[$pkValue][0]
+                            : $dictionary[$pkValue];
+
+                        $model->setRelation($relationName, $value);
+                    }
+                }
+            }
+        }
     }
 
     // ============================================================================
@@ -1414,7 +1520,13 @@ class Query
             return $results;
         }
 
-        return array_map([$this, 'hydrateModel'], $results);
+        $models = array_map([$this, 'hydrateModel'], $results);
+
+        if (!empty($this->eagerLoad) && !empty($models)) {
+            $this->eagerLoadRelations($models);
+        }
+
+        return $models;
     }
 
     /**
