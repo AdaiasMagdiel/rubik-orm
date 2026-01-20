@@ -237,13 +237,8 @@ trait SchemaTrait
         if (is_null($value)) {
             return 'NULL';
         }
-        if (is_bool($value)) {
-            return $value ? '1' : '0';
-        }
-        if (is_string($value)) {
-            return sprintf("'%s'", addslashes($value));
-        }
-        return (string)$value;
+
+        return Rubik::getConn()->quote($value);
     }
 
     /**
