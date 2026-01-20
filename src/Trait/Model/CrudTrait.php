@@ -5,6 +5,7 @@ namespace AdaiasMagdiel\Rubik\Trait\Model;
 use AdaiasMagdiel\Rubik\Enum\Driver;
 use AdaiasMagdiel\Rubik\Rubik;
 use RuntimeException;
+use Throwable;
 
 trait CrudTrait
 {
@@ -21,11 +22,11 @@ trait CrudTrait
             $result = $this->update();
 
             if ($result) {
+                $this->_dirty = [];
                 $this->afterUpdate();
                 $this->afterSave();
             }
 
-            $this->_dirty = [];
             return $result;
         }
 
@@ -149,7 +150,7 @@ trait CrudTrait
 
             $conn->commit();
             return true;
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             $conn->rollBack();
             throw $e;
         }
@@ -168,6 +169,8 @@ trait CrudTrait
         if (empty($this->_dirty)) {
             return true;
         }
+
+        $this->beforeUpdate();
 
         $sets = [];
         $values = [];
@@ -192,6 +195,8 @@ trait CrudTrait
         $result = $stmt->execute($values);
 
         $this->_dirty = [];
+        $this->afterUpdate();
+
         return $result;
     }
 
