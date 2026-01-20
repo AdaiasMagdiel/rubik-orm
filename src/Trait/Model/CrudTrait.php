@@ -13,17 +13,26 @@ trait CrudTrait
      */
     public function save(bool $ignore = false): bool
     {
-        $pk = static::primaryKey();
-        $isNew = !isset($this->_data[$pk]);
+        $this->beforeSave();
 
-        if (!$isNew) {
-            // Existing record → UPDATE
+        if ($this->exists) {
+            $this->beforeUpdate();
+
             $result = $this->update();
+
+            if ($result) {
+                $this->afterUpdate();
+                $this->afterSave();
+            }
+
             $this->_dirty = [];
             return $result;
         }
 
         // INSERT
+        $this->beforeCreate();
+
+        $pk = static::primaryKey();
         $fields = static::fields();
         $columns = [];
         $placeholders = [];
@@ -31,7 +40,7 @@ trait CrudTrait
 
         foreach ($fields as $key => $_) {
             if (array_key_exists($key, $this->_data)) {
-                $columns[] = $key;
+                $columns[] = Rubik::quoteIdentifier($key);
                 $placeholders[] = ":$key";
                 $values[":$key"] = $this->_data[$key];
             }
@@ -66,8 +75,11 @@ trait CrudTrait
         }
 
         // Retrieve new PK
-        if ($isNew) {
-            $this->_data[$pk] = (int)Rubik::getConn()->lastInsertId();
+        if (!isset($this->_data[$pk])) {
+            $lastId = Rubik::getConn()->lastInsertId();
+            if ($lastId) {
+                $this->_data[$pk] = (int)$lastId;
+            }
 
             // Reload defaults
             $fresh = static::find($this->_data[$pk]);
@@ -76,7 +88,12 @@ trait CrudTrait
             }
         }
 
+        $this->exists = true;
         $this->_dirty = [];
+
+        $this->afterCreate();
+        $this->afterSave();
+
         return true;
     }
 
@@ -188,6 +205,8 @@ trait CrudTrait
             throw new RuntimeException('Cannot delete record without primary key.');
         }
 
+        $this->beforeDelete();
+
         $sql = sprintf(
             'DELETE FROM %s WHERE %s = :%s',
             static::getTableName(),
@@ -197,6 +216,13 @@ trait CrudTrait
 
         $stmt = Rubik::getConn()->prepare($sql);
 
-        return $stmt->execute([$pk => $this->_data[$pk]]);
+        $result = $stmt->execute([$pk => $this->_data[$pk]]);
+
+        if ($result) {
+            $this->afterDelete();
+            $this->exists = false;
+        }
+
+        return $result;
     }
 }
