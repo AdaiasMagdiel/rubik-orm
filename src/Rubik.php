@@ -213,4 +213,17 @@ class Rubik
             ),
         };
     }
+
+    public static function quoteIdentifier(string $identifier): string
+    {
+        $char = self::getDriver() === Driver::MYSQL ? '`' : '"';
+        $identifier = str_replace($char, '', $identifier);
+
+        if (str_contains($identifier, '.')) {
+            $parts = explode('.', $identifier);
+            return implode('.', array_map(fn($p) => $char . $p . $char, $parts));
+        }
+
+        return $char . $identifier . $char;
+    }
 }
