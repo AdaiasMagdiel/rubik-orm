@@ -35,9 +35,14 @@ abstract class Model implements JsonSerializable
      *
      * @return array Associative array of relationship names and their definitions.
      */
-    protected static function relationships(): array
+    public static function relationships(): array
     {
         return [];
+    }
+
+    public function setRelation(string $key, mixed $value): void
+    {
+        $this->_relationships[$key] = $value;
     }
 
     /**
