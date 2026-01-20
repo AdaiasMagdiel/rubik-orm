@@ -231,7 +231,7 @@ class Query
                     $sanitizedFields[] = $field;
                 } else {
                     // It's a plain column reference
-                    $sanitizedFields[] = $this->sanitizeColumnReference($field);
+                    $sanitizedFields[] = Rubik::quoteIdentifier($column);
                 }
             }
         }
@@ -1435,6 +1435,10 @@ class Query
 
         $model = new $this->model();
 
+        if ($model instanceof Model) {
+            $model->exists = true;
+        }
+
         // Use magic __set if available, otherwise set properties directly
         if (method_exists($model, '__set')) {
             foreach ($data as $key => $value) {
@@ -1468,11 +1472,7 @@ class Query
      */
     private function sanitizeIdentifier(string $identifier): string
     {
-        if (!preg_match('/^[a-zA-Z0-9_]+$/', $identifier)) {
-            throw new InvalidArgumentException("Invalid identifier: $identifier");
-        }
-
-        return $identifier;
+        return Rubik::quoteIdentifier($identifier);
     }
 
     /**
@@ -1489,11 +1489,12 @@ class Query
     private function sanitizeColumnReference(string $column): string
     {
         // Allow qualified columns: table.column
-        if (!preg_match('/^[a-zA-Z0-9_]+(\.[a-zA-Z0-9_]+)?$/', $column)) {
-            throw new InvalidArgumentException("Invalid column reference: $column");
+        if (str_contains($column, '.')) {
+            $parts = explode('.', $column);
+            return implode('.', array_map([Rubik::class, 'quoteIdentifier'], $parts));
         }
 
-        return $column;
+        return Rubik::quoteIdentifier($column);
     }
 
     /**
