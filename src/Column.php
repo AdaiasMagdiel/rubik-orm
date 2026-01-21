@@ -396,8 +396,8 @@ final class Column
     /**
      * Validates that string-based types (CHAR/VARCHAR) have valid lengths.
      *
-     * @param array<string, mixed> $p
-     * @throws InvalidArgumentException
+     * @param array<string, mixed> $p The column definition parameters.
+     * @throws InvalidArgumentException If length is invalid or default value is incompatible.
      */
     private static function validateStringLength(array $p): void
     {
@@ -415,8 +415,8 @@ final class Column
     /**
      * Validates DECIMAL precision, scale, and default value.
      *
-     * @param array<string, mixed> $p
-     * @throws InvalidArgumentException
+     * @param array<string, mixed> $p The column definition parameters.
+     * @throws InvalidArgumentException If precision/scale is invalid or default exceeds limits.
      */
     private static function validateDecimal(array $p): void
     {
@@ -443,6 +443,9 @@ final class Column
 
     /**
      * Validates integer-based types.
+     *
+     * @param array<string, mixed> $p The column definition parameters.
+     * @throws InvalidArgumentException If the default value is not an integer.
      */
     private static function validateInteger(array $p): void
     {
@@ -454,6 +457,9 @@ final class Column
 
     /**
      * Validates TINYINT range and default.
+     *
+     * @param array<string, mixed> $p The column definition parameters.
+     * @throws InvalidArgumentException If the default value is out of bounds.
      */
     private static function validateTinyint(array $p): void
     {
@@ -470,6 +476,9 @@ final class Column
 
     /**
      * Validates ENUM values and default.
+     *
+     * @param array<string, mixed> $p The column definition parameters.
+     * @throws InvalidArgumentException If values are empty or default is not in allowed values.
      */
     private static function validateEnum(array $p): void
     {
@@ -485,6 +494,9 @@ final class Column
 
     /**
      * Validates NUMERIC type (similar to DECIMAL but with broader limits).
+     *
+     * @param array<string, mixed> $p The column definition parameters.
+     * @throws InvalidArgumentException If precision/scale is invalid or default is not numeric.
      */
     private static function validateNumeric(array $p): void
     {
@@ -501,6 +513,9 @@ final class Column
 
     /**
      * Validates FLOAT/REAL/DOUBLE types.
+     *
+     * @param array<string, mixed> $p The column definition parameters.
+     * @throws InvalidArgumentException If default is not numeric or precision is invalid.
      */
     private static function validateFloat(array $p): void
     {
@@ -519,6 +534,9 @@ final class Column
 
     /**
      * Validates BIT fields and length constraints.
+     *
+     * @param array<string, mixed> $p The column definition parameters.
+     * @throws InvalidArgumentException If length is out of bounds or default is not integer.
      */
     private static function validateBit(array $p): void
     {
@@ -534,6 +552,9 @@ final class Column
 
     /**
      * Validates TEXT-based columns.
+     *
+     * @param array<string, mixed> $p The column definition parameters.
+     * @throws InvalidArgumentException If default value is not a string.
      */
     private static function validateText(array $p): void
     {
@@ -545,6 +566,9 @@ final class Column
 
     /**
      * Validates JSON type values.
+     *
+     * @param array<string, mixed> $p The column definition parameters.
+     * @throws InvalidArgumentException If the default value is not a valid JSON string or structure.
      */
     private static function validateJson(array $p): void
     {
@@ -578,6 +602,9 @@ final class Column
 
     /**
      * Validates UUIDs against RFC 4122 format.
+     *
+     * @param array<string, mixed> $p The column definition parameters.
+     * @throws InvalidArgumentException If the UUID format is invalid.
      */
     private static function validateUuid(array $p): void
     {
@@ -595,7 +622,7 @@ final class Column
             throw new InvalidArgumentException('UUID default must be a string or SQL::raw().');
         }
 
-        // regex padrão RFC 4122
+        // Standard RFC 4122 regex
         $pattern = '/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i';
         if (!preg_match($pattern, $default)) {
             throw new InvalidArgumentException('Invalid UUID format.');
@@ -604,6 +631,9 @@ final class Column
 
     /**
      * Validates BOOLEAN values and ensures only valid defaults are used.
+     *
+     * @param array<string, mixed> $p The column definition parameters.
+     * @throws InvalidArgumentException If default is not boolean-compatible.
      */
     private static function validateBoolean(array $p): void
     {
@@ -620,6 +650,9 @@ final class Column
 
     /**
      * Validates SET type and its default value.
+     *
+     * @param array<string, mixed> $p The column definition parameters.
+     * @throws InvalidArgumentException If values are empty or default contains invalid options.
      */
     private static function validateSet(array $p): void
     {
@@ -643,6 +676,9 @@ final class Column
 
     /**
      * Validates DATE column default values.
+     *
+     * @param array<string, mixed> $p The column definition parameters.
+     * @throws InvalidArgumentException If default is not a string.
      */
     private static function validateDate(array $p): void
     {
@@ -654,6 +690,9 @@ final class Column
 
     /**
      * Validates DATETIME and TIMESTAMP defaults and precision.
+     *
+     * @param array<string, mixed> $p The column definition parameters.
+     * @throws InvalidArgumentException If precision is out of range or default is not a string.
      */
     private static function validateDateTime(array $p): void
     {
@@ -670,6 +709,9 @@ final class Column
 
     /**
      * Validates TIME fields.
+     *
+     * @param array<string, mixed> $p The column definition parameters.
+     * @throws InvalidArgumentException If default is not a valid HH:MM:SS string.
      */
     private static function validateTime(array $p): void
     {
@@ -685,6 +727,9 @@ final class Column
 
     /**
      * Validates YEAR type ranges (MySQL-compatible).
+     *
+     * @param array<string, mixed> $p The column definition parameters.
+     * @throws InvalidArgumentException If default year is out of supported range (1901-2155).
      */
     private static function validateYear(array $p): void
     {
@@ -698,6 +743,9 @@ final class Column
 
     /**
      * Validates BLOB and similar binary data types.
+     *
+     * @param array<string, mixed> $p The column definition parameters.
+     * @throws InvalidArgumentException If default is not a string.
      */
     private static function validateBlob(array $p): void
     {
@@ -709,6 +757,9 @@ final class Column
 
     /**
      * Validates fixed-length binary columns (BINARY, VARBINARY).
+     *
+     * @param array<string, mixed> $p The column definition parameters.
+     * @throws InvalidArgumentException If length is out of bounds or default is not a string.
      */
     private static function validateBinary(array $p): void
     {
@@ -725,6 +776,9 @@ final class Column
 
     /**
      * Validates spatial/geometric data types.
+     *
+     * @param array<string, mixed> $p The column definition parameters.
+     * @throws InvalidArgumentException If default is not a WKT string.
      */
     private static function validateGeometry(array $p): void
     {
