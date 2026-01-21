@@ -10,7 +10,15 @@ use Throwable;
 trait CrudTrait
 {
     /**
-     * Saves the model instance: INSERT or UPDATE.
+     * Persists the model instance to the database.
+     * 
+     * Performs either an INSERT or an UPDATE based on the `exists` property.
+     * Handles lifecycle hooks (beforeSave, beforeCreate/Update, etc.), manages
+     * dirty states, and populates the primary key after insertion if applicable.
+     *
+     * @param bool $ignore If true, uses 'INSERT OR IGNORE' (SQLite) or 'INSERT IGNORE' (MySQL)
+     *                     to silently bypass duplicate key errors during insertion.
+     * @return bool True if the operation was successful, false otherwise.
      */
     public function save(bool $ignore = false): bool
     {
@@ -78,7 +86,11 @@ trait CrudTrait
         // Retrieve new PK
         if (!isset($this->_data[$pk])) {
             $lastId = Rubik::getConn()->lastInsertId();
-            if ($lastId) {
+
+            $fieldDef = static::fields()[$pk] ?? [];
+            $isAutoIncrement = $fieldDef['auto_increment'] ?? $fieldDef['autoincrement'] ?? false;
+
+            if ($lastId && $isAutoIncrement) {
                 $this->_data[$pk] = (int)$lastId;
             }
 
@@ -99,7 +111,15 @@ trait CrudTrait
     }
 
     /**
-     * Bulk insert with column validation.
+     * Inserts multiple records into the database in a single batch query.
+     * 
+     * Validates that all keys in the records match the model's defined fields
+     * and delegates the execution to the Query Builder for performance.
+     *
+     * @param array<int, array<string, mixed>> $records An array of associative arrays representing records.
+     * @return bool True if records were inserted successfully.
+     * 
+     * @throws RuntimeException If an invalid column name is found.
      */
     public static function insertMany(array $records): bool
     {
@@ -108,56 +128,28 @@ trait CrudTrait
         }
 
         $validColumns = array_keys(static::fields());
-        $conn = Rubik::getConn();
-        $conn->beginTransaction();
 
-        try {
-            foreach ($records as $i => $record) {
-
-                // Validate keys
-                foreach (array_keys($record) as $col) {
-                    if (!in_array($col, $validColumns, true)) {
-                        throw new RuntimeException("Invalid column: {$col}");
-                    }
+        foreach ($records as $record) {
+            foreach (array_keys($record) as $col) {
+                if (!in_array($col, $validColumns, true)) {
+                    throw new RuntimeException("Invalid column: {$col}");
                 }
-
-                $columns = array_keys($record);
-                $placeholders = [];
-                $values = [];
-
-                foreach ($columns as $key) {
-                    $ph = ":{$key}_{$i}";
-                    $placeholders[] = $ph;
-                    $values[$ph] = $record[$key];
-                }
-
-                $sql = sprintf(
-                    'INSERT INTO %s (%s) VALUES (%s)',
-                    static::getTableName(),
-                    implode(', ', $columns),
-                    implode(', ', $placeholders)
-                );
-
-                $stmt = $conn->prepare($sql);
-
-                if ($stmt === false) {
-                    $err = $conn->errorInfo();
-                    throw new RuntimeException("Failed to prepare SQL: {$sql} - Error: {$err[2]}");
-                }
-
-                $stmt->execute($values);
             }
-
-            $conn->commit();
-            return true;
-        } catch (Throwable $e) {
-            $conn->rollBack();
-            throw $e;
         }
+
+        static::query()->insert($records);
+
+        return true;
     }
 
     /**
-     * Updates only dirty fields.
+     * Updates the existing model in the database.
+     * 
+     * Only updates fields that have been modified (dirty fields).
+     * Requires the primary key to be set on the model.
+     *
+     * @return bool True if the update was successful (or no fields were dirty), false otherwise.
+     * @throws RuntimeException If the model does not have a primary key set.
      */
     public function update(): bool
     {
@@ -201,7 +193,13 @@ trait CrudTrait
     }
 
     /**
-     * Deletes the model instance.
+     * Removes the model instance from the database.
+     * 
+     * Requires the primary key to be set. Upon success, the model's
+     * `exists` property is set to false.
+     *
+     * @return bool True if the record was successfully deleted.
+     * @throws RuntimeException If the model does not have a primary key set.
      */
     public function delete(): bool
     {
