@@ -11,10 +11,10 @@
       
       
       
-        <link rel="prev" href="../query-builder/">
+        <link rel="prev" href="../models-lifecycle/">
       
       
-        <link rel="next" href="../advanced/">
+        <link rel="next" href="../relationships/">
       
       
       <link rel="icon" href="../assets/images/favicon.png">
@@ -22,7 +22,7 @@
     
     
       
-        <title>Relationships - Rubik ORM</title>
+        <title>Query Builder - Rubik ORM</title>
       
     
     
@@ -72,7 +72,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#relationships-associations" class="md-skip">
+        <a href="#query-builder" class="md-skip">
           Skip to content
         </a>
       
@@ -106,7 +106,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Relationships
+              Query Builder
             
           </span>
         </div>
@@ -253,9 +253,11 @@
   
   
   
+    
   
-    <li class="md-tabs__item">
-      <a href="../query-builder/" class="md-tabs__link">
+  
+    <li class="md-tabs__item md-tabs__item--active">
+      <a href="./" class="md-tabs__link">
         
   
   
@@ -272,11 +274,9 @@
   
   
   
-    
   
-  
-    <li class="md-tabs__item md-tabs__item--active">
-      <a href="./" class="md-tabs__link">
+    <li class="md-tabs__item">
+      <a href="../relationships/" class="md-tabs__link">
         
   
   
@@ -433,28 +433,6 @@
       
   
   
-  
-  
-    <li class="md-nav__item">
-      <a href="../query-builder/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    Query Builder
-    
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-    
-      
-      
-  
-  
     
   
   
@@ -472,7 +450,7 @@
   
   
   <span class="md-ellipsis">
-    Relationships
+    Query Builder
     
   </span>
   
@@ -485,7 +463,7 @@
   
   
   <span class="md-ellipsis">
-    Relationships
+    Query Builder
     
   </span>
   
@@ -508,37 +486,46 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#relationship-types" class="md-nav__link">
+  <a href="#retrieving-data" class="md-nav__link">
     <span class="md-ellipsis">
-      Relationship Types
+      Retrieving Data
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Relationship Types">
+    <nav class="md-nav" aria-label="Retrieving Data">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#1-hasone-hasmany" class="md-nav__link">
+  <a href="#all-vs-get" class="md-nav__link">
     <span class="md-ellipsis">
-      1. HasOne / HasMany
+      all() vs get()
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#2-belongsto" class="md-nav__link">
+  <a href="#first" class="md-nav__link">
     <span class="md-ellipsis">
-      2. BelongsTo
+      first()
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#3-belongstomany-many-to-many" class="md-nav__link">
+  <a href="#cursor-memory-efficient" class="md-nav__link">
     <span class="md-ellipsis">
-      3. BelongsToMany (Many-to-Many)
+      cursor() (Memory Efficient)
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#chunkint-size-callable-cb" class="md-nav__link">
+    <span class="md-ellipsis">
+      chunk(int $size, callable $cb)
     </span>
   </a>
   
@@ -550,37 +537,37 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#loading-strategies" class="md-nav__link">
+  <a href="#logic-clauses" class="md-nav__link">
     <span class="md-ellipsis">
-      Loading Strategies
+      Logic Clauses
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Loading Strategies">
+    <nav class="md-nav" aria-label="Logic Clauses">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#lazy-loading-magic-property" class="md-nav__link">
+  <a href="#where-orwhere" class="md-nav__link">
     <span class="md-ellipsis">
-      Lazy Loading (Magic Property)
+      Where / OrWhere
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#eager-loading-with" class="md-nav__link">
+  <a href="#wherein" class="md-nav__link">
     <span class="md-ellipsis">
-      Eager Loading (with)
+      WhereIn
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#how-eager-loading-works-internally" class="md-nav__link">
+  <a href="#whereexists-subqueries" class="md-nav__link">
     <span class="md-ellipsis">
-      How Eager Loading Works Internally
+      WhereExists (Subqueries)
     </span>
   </a>
   
@@ -592,11 +579,44 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#chaining-on-relations" class="md-nav__link">
+  <a href="#pagination" class="md-nav__link">
     <span class="md-ellipsis">
-      Chaining on Relations
+      Pagination
     </span>
   </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#aggregates" class="md-nav__link">
+    <span class="md-ellipsis">
+      Aggregates
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Aggregates">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#count" class="md-nav__link">
+    <span class="md-ellipsis">
+      count()
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#exec" class="md-nav__link">
+    <span class="md-ellipsis">
+      exec()
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -604,6 +624,28 @@
   
 </nav>
       
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../relationships/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Relationships
+    
+  </span>
+  
+
+      </a>
     </li>
   
 
@@ -657,37 +699,46 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#relationship-types" class="md-nav__link">
+  <a href="#retrieving-data" class="md-nav__link">
     <span class="md-ellipsis">
-      Relationship Types
+      Retrieving Data
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Relationship Types">
+    <nav class="md-nav" aria-label="Retrieving Data">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#1-hasone-hasmany" class="md-nav__link">
+  <a href="#all-vs-get" class="md-nav__link">
     <span class="md-ellipsis">
-      1. HasOne / HasMany
+      all() vs get()
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#2-belongsto" class="md-nav__link">
+  <a href="#first" class="md-nav__link">
     <span class="md-ellipsis">
-      2. BelongsTo
+      first()
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#3-belongstomany-many-to-many" class="md-nav__link">
+  <a href="#cursor-memory-efficient" class="md-nav__link">
     <span class="md-ellipsis">
-      3. BelongsToMany (Many-to-Many)
+      cursor() (Memory Efficient)
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#chunkint-size-callable-cb" class="md-nav__link">
+    <span class="md-ellipsis">
+      chunk(int $size, callable $cb)
     </span>
   </a>
   
@@ -699,37 +750,37 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#loading-strategies" class="md-nav__link">
+  <a href="#logic-clauses" class="md-nav__link">
     <span class="md-ellipsis">
-      Loading Strategies
+      Logic Clauses
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Loading Strategies">
+    <nav class="md-nav" aria-label="Logic Clauses">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#lazy-loading-magic-property" class="md-nav__link">
+  <a href="#where-orwhere" class="md-nav__link">
     <span class="md-ellipsis">
-      Lazy Loading (Magic Property)
+      Where / OrWhere
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#eager-loading-with" class="md-nav__link">
+  <a href="#wherein" class="md-nav__link">
     <span class="md-ellipsis">
-      Eager Loading (with)
+      WhereIn
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#how-eager-loading-works-internally" class="md-nav__link">
+  <a href="#whereexists-subqueries" class="md-nav__link">
     <span class="md-ellipsis">
-      How Eager Loading Works Internally
+      WhereExists (Subqueries)
     </span>
   </a>
   
@@ -741,11 +792,44 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#chaining-on-relations" class="md-nav__link">
+  <a href="#pagination" class="md-nav__link">
     <span class="md-ellipsis">
-      Chaining on Relations
+      Pagination
     </span>
   </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#aggregates" class="md-nav__link">
+    <span class="md-ellipsis">
+      Aggregates
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Aggregates">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#count" class="md-nav__link">
+    <span class="md-ellipsis">
+      count()
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#exec" class="md-nav__link">
+    <span class="md-ellipsis">
+      exec()
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -765,74 +849,72 @@
 
 
 
-<h1 id="relationships-associations">Relationships &amp; Associations</h1>
-<p>Rubik provides a robust relationship system to link models together. Relationships are defined as methods returning a <code>Relation</code> object.</p>
-<h2 id="relationship-types">Relationship Types</h2>
-<h3 id="1-hasone-hasmany">1. HasOne / HasMany</h3>
-<p>The <strong>Inverse</strong> side holds the foreign key.</p>
+<h1 id="query-builder">Query Builder</h1>
+<p>The <code>Query</code> class allows you to construct complex SQL queries using a fluent, chainable interface. It handles all parameter binding automatically to prevent SQL Injection.</p>
+<h2 id="retrieving-data">Retrieving Data</h2>
+<h3 id="all-vs-get"><code>all()</code> vs <code>get()</code></h3>
 <ul>
-<li><strong>Parent:</strong> <code>User</code> (ID: 1)</li>
-<li><strong>Child:</strong> <code>Post</code> (user_id: 1)</li>
+<li><code>all()</code>: Executes the query and returns an array of hydrated Model objects (or <code>stdClass</code> if no model is set).</li>
+<li><code>get()</code>: Alias for <code>all()</code>, commonly used in Relationships.</li>
 </ul>
-<p><strong>User Model:</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="x">public function posts(): HasMany {</span>
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="x">    // (RelatedClass, ForeignKeyOnChild, LocalKeyOnParent)</span>
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="x">    return $this-&gt;hasMany(Post::class, &#39;user_id&#39;, &#39;id&#39;);</span>
+<h3 id="first"><code>first()</code></h3>
+<p>Adds <code>LIMIT 1</code> and returns a single Model instance or <code>null</code>.</p>
+<h3 id="cursor-memory-efficient"><code>cursor()</code> (Memory Efficient)</h3>
+<p>Uses a PHP Generator to yield one model at a time. Essential for processing thousands of records without running out of RAM.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="x">foreach (User::query()-&gt;cursor() as $user) {</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="x">    // Only one User object exists in memory at a time</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="x">    process($user);</span>
 <a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="x">}</span>
 </code></pre></div>
-<h3 id="2-belongsto">2. BelongsTo</h3>
-<p>The <strong>Owning</strong> side holds the foreign key.</p>
-<p><strong>Post Model:</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="x">public function user(): BelongsTo {</span>
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="x">    // (RelatedClass, ForeignKeyOnThis, OwnerKeyOnParent)</span>
-<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="x">    return $this-&gt;belongsTo(User::class, &#39;user_id&#39;, &#39;id&#39;);</span>
-<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="x">}</span>
+<h3 id="chunkint-size-callable-cb"><code>chunk(int $size, callable $cb)</code></h3>
+<p>Retrieves records in "pages" of size <code>$size</code>.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="x">User::chunk(100, function(array $users) {</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="x">    // Process 100 users at a time</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="x">});</span>
 </code></pre></div>
-<h3 id="3-belongstomany-many-to-many">3. BelongsToMany (Many-to-Many)</h3>
-<p>Requires a Pivot Table (e.g., <code>role_user</code>).</p>
-<p><strong>User Model:</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="x">public function roles(): BelongsToMany {</span>
-<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="x">    return $this-&gt;belongsToMany(</span>
-<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="x">        related: Role::class,</span>
-<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="x">        pivotTable: &#39;role_user&#39;,</span>
-<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="x">        foreignKey: &#39;user_id&#39;,    // Key in pivot pointing to This</span>
-<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="x">        relatedKey: &#39;role_id&#39;,    // Key in pivot pointing to Related</span>
-<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="x">        parentKey: &#39;id&#39;,          // Key on This</span>
-<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="x">        relatedParentKey: &#39;id&#39;    // Key on Related</span>
-<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a><span class="x">    );</span>
-<a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a><span class="x">}</span>
+<h2 id="logic-clauses">Logic Clauses</h2>
+<h3 id="where-orwhere">Where / OrWhere</h3>
+<ul>
+<li><strong>Signature:</strong> <code>where(col, value)</code> OR <code>where(col, operator, value)</code></li>
+<li><strong>Signature:</strong> <code>where(col, 'IS', null)</code> OR <code>where(col, 'IS NOT', null)</code></li>
+</ul>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="x">$q-&gt;where(&#39;votes&#39;, &#39;&gt;&#39;, 100)</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="x">  -&gt;where(&#39;status&#39;, &#39;active&#39;) // Implies &#39;=&#39;</span>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="x">  -&gt;orWhere(&#39;is_vip&#39;, true);</span>
 </code></pre></div>
-<div class="admonition note">
-<p class="admonition-title">Pivot Table Names</p>
-</div>
-<p>Unlike some ORMs, Rubik requires you to explicitly name the pivot table. It does not guess alphabetical order (e.g., <code>role_user</code> vs <code>user_role</code>).</p>
-<h2 id="loading-strategies">Loading Strategies</h2>
-<h3 id="lazy-loading-magic-property">Lazy Loading (Magic Property)</h3>
-<p>Accessing the relationship as a property triggers a database query immediately. The result is cached on the model instance.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="x">$user = User::find(1);</span>
-<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="x">// Query runs here: SELECT * FROM posts WHERE user_id = 1</span>
-<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="x">$posts = $user-&gt;posts;</span>
+<h3 id="wherein">WhereIn</h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="x">$q-&gt;whereIn(&#39;id&#39;, [1, 5, 7]);</span>
 </code></pre></div>
-<h3 id="eager-loading-with">Eager Loading (<code>with</code>)</h3>
-<p>Solves the N+1 query problem. Rubik loads all related models in one go and maps them in memory.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="x">$users = User::query()-&gt;with(&#39;posts&#39;, &#39;profile&#39;)-&gt;all();</span>
+<h3 id="whereexists-subqueries">WhereExists (Subqueries)</h3>
+<p>Rubik supports subqueries for existence checks.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="x">$orders = Order::query()-&gt;where(&#39;total&#39;, &#39;&gt;&#39;, 500);</span>
 <a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>
-<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="x">foreach ($users as $user) {</span>
-<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="x">    // No DB query here. $user-&gt;posts is already populated.</span>
-<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="x">    print_r($user-&gt;posts);</span>
-<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="x">}</span>
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="x">// Select Users who have orders &gt; 500</span>
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="x">$users = User::whereExists($orders)-&gt;all();</span>
 </code></pre></div>
-<h3 id="how-eager-loading-works-internally">How Eager Loading Works Internally</h3>
-<ol>
-<li><strong>Extract Keys:</strong> Rubik gathers all IDs from the parent <code>$users</code> list.</li>
-<li><strong>Batch Query:</strong> It runs <code>SELECT * FROM posts WHERE user_id IN (1, 2, 3...)</code>.</li>
-<li><strong>Dictionary Map:</strong> It iterates the posts, grouping them by <code>user_id</code>.</li>
-<li><strong>Hydration:</strong> It assigns the groups back to the specific User instances using <code>setRelation()</code>.</li>
-</ol>
-<h2 id="chaining-on-relations">Chaining on Relations</h2>
-<p>Since Relationships act as Query Builders, you can refine them:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="x">// Get only published posts for this user</span>
-<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="x">$published = $user-&gt;posts()-&gt;where(&#39;status&#39;, &#39;published&#39;)-&gt;get();</span>
+<h2 id="pagination">Pagination</h2>
+<p>The <code>paginate()</code> method simplifies frontend integration.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="x">$result = User::where(&#39;active&#39;, 1)-&gt;paginate(page: 2, perPage: 15);</span>
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="x">// Structure of $result:</span>
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="x">// [</span>
+<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a><span class="x">//    &#39;data&#39; =&gt; [ ... objects ... ],</span>
+<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a><span class="x">//    &#39;total&#39; =&gt; 150,</span>
+<a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a><span class="x">//    &#39;per_page&#39; =&gt; 15,</span>
+<a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a><span class="x">//    &#39;current_page&#39; =&gt; 2,</span>
+<a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a><span class="x">//    &#39;last_page&#39; =&gt; 10</span>
+<a id="__codelineno-5-10" name="__codelineno-5-10" href="#__codelineno-5-10"></a><span class="x">// ]</span>
+</code></pre></div>
+<h2 id="aggregates">Aggregates</h2>
+<h3 id="count"><code>count()</code></h3>
+<p>Returns the integer count of rows matching the criteria. It automatically modifies the <code>SELECT</code> clause to <code>COUNT(*)</code> temporarily.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="x">$count = User::where(&#39;age&#39;, &#39;&gt;&#39;, 18)-&gt;count();</span>
+</code></pre></div>
+<h3 id="exec"><code>exec()</code></h3>
+<p>Returns <code>true</code> if <em>at least one</em> row matches. Optimized to fetch only 1 row.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="x">if (User::where(&#39;email&#39;, &#39;exists@email.com&#39;)-&gt;exec()) {</span>
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="x">    echo &quot;Email taken!&quot;;</span>
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="x">}</span>
 </code></pre></div>
 
 

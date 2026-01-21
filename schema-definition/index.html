@@ -11,10 +11,10 @@
       
       
       
-        <link rel="prev" href="../query-builder/">
+        <link rel="prev" href="../getting-started/">
       
       
-        <link rel="next" href="../advanced/">
+        <link rel="next" href="../models-lifecycle/">
       
       
       <link rel="icon" href="../assets/images/favicon.png">
@@ -22,7 +22,7 @@
     
     
       
-        <title>Relationships - Rubik ORM</title>
+        <title>Schema & Migrations - Rubik ORM</title>
       
     
     
@@ -72,7 +72,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#relationships-associations" class="md-skip">
+        <a href="#schema-definition-migrations" class="md-skip">
           Skip to content
         </a>
       
@@ -106,7 +106,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Relationships
+              Schema & Migrations
             
           </span>
         </div>
@@ -215,9 +215,11 @@
   
   
   
+    
   
-    <li class="md-tabs__item">
-      <a href="../schema-definition/" class="md-tabs__link">
+  
+    <li class="md-tabs__item md-tabs__item--active">
+      <a href="./" class="md-tabs__link">
         
   
   
@@ -272,11 +274,9 @@
   
   
   
-    
   
-  
-    <li class="md-tabs__item md-tabs__item--active">
-      <a href="./" class="md-tabs__link">
+    <li class="md-tabs__item">
+      <a href="../relationships/" class="md-tabs__link">
         
   
   
@@ -389,10 +389,32 @@
       
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../schema-definition/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    Schema & Migrations
+    
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
@@ -403,6 +425,119 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#the-fields-method" class="md-nav__link">
+    <span class="md-ellipsis">
+      The fields() Method
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-column-factory" class="md-nav__link">
+    <span class="md-ellipsis">
+      The Column Factory
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="The Column Factory">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#available-types-logic" class="md-nav__link">
+    <span class="md-ellipsis">
+      Available Types &amp; Logic
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#common-arguments" class="md-nav__link">
+    <span class="md-ellipsis">
+      Common Arguments
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#foreign-keys" class="md-nav__link">
+    <span class="md-ellipsis">
+      Foreign Keys
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ddl-operations" class="md-nav__link">
+    <span class="md-ellipsis">
+      DDL Operations
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="DDL Operations">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#create-table" class="md-nav__link">
+    <span class="md-ellipsis">
+      Create Table
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#drop-table" class="md-nav__link">
+    <span class="md-ellipsis">
+      Drop Table
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#truncate-table" class="md-nav__link">
+    <span class="md-ellipsis">
+      Truncate Table
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -455,32 +590,10 @@
       
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    Relationships
-    
-  </span>
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../relationships/" class="md-nav__link">
         
   
   
@@ -491,119 +604,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#relationship-types" class="md-nav__link">
-    <span class="md-ellipsis">
-      Relationship Types
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Relationship Types">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#1-hasone-hasmany" class="md-nav__link">
-    <span class="md-ellipsis">
-      1. HasOne / HasMany
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#2-belongsto" class="md-nav__link">
-    <span class="md-ellipsis">
-      2. BelongsTo
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#3-belongstomany-many-to-many" class="md-nav__link">
-    <span class="md-ellipsis">
-      3. BelongsToMany (Many-to-Many)
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#loading-strategies" class="md-nav__link">
-    <span class="md-ellipsis">
-      Loading Strategies
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Loading Strategies">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#lazy-loading-magic-property" class="md-nav__link">
-    <span class="md-ellipsis">
-      Lazy Loading (Magic Property)
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#eager-loading-with" class="md-nav__link">
-    <span class="md-ellipsis">
-      Eager Loading (with)
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#how-eager-loading-works-internally" class="md-nav__link">
-    <span class="md-ellipsis">
-      How Eager Loading Works Internally
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#chaining-on-relations" class="md-nav__link">
-    <span class="md-ellipsis">
-      Chaining on Relations
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -657,37 +657,46 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#relationship-types" class="md-nav__link">
+  <a href="#the-fields-method" class="md-nav__link">
     <span class="md-ellipsis">
-      Relationship Types
+      The fields() Method
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Relationship Types">
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-column-factory" class="md-nav__link">
+    <span class="md-ellipsis">
+      The Column Factory
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="The Column Factory">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#1-hasone-hasmany" class="md-nav__link">
+  <a href="#available-types-logic" class="md-nav__link">
     <span class="md-ellipsis">
-      1. HasOne / HasMany
+      Available Types &amp; Logic
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#2-belongsto" class="md-nav__link">
+  <a href="#common-arguments" class="md-nav__link">
     <span class="md-ellipsis">
-      2. BelongsTo
+      Common Arguments
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#3-belongstomany-many-to-many" class="md-nav__link">
+  <a href="#foreign-keys" class="md-nav__link">
     <span class="md-ellipsis">
-      3. BelongsToMany (Many-to-Many)
+      Foreign Keys
     </span>
   </a>
   
@@ -699,37 +708,37 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#loading-strategies" class="md-nav__link">
+  <a href="#ddl-operations" class="md-nav__link">
     <span class="md-ellipsis">
-      Loading Strategies
+      DDL Operations
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Loading Strategies">
+    <nav class="md-nav" aria-label="DDL Operations">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#lazy-loading-magic-property" class="md-nav__link">
+  <a href="#create-table" class="md-nav__link">
     <span class="md-ellipsis">
-      Lazy Loading (Magic Property)
+      Create Table
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#eager-loading-with" class="md-nav__link">
+  <a href="#drop-table" class="md-nav__link">
     <span class="md-ellipsis">
-      Eager Loading (with)
+      Drop Table
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#how-eager-loading-works-internally" class="md-nav__link">
+  <a href="#truncate-table" class="md-nav__link">
     <span class="md-ellipsis">
-      How Eager Loading Works Internally
+      Truncate Table
     </span>
   </a>
   
@@ -737,15 +746,6 @@
         
       </ul>
     </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#chaining-on-relations" class="md-nav__link">
-    <span class="md-ellipsis">
-      Chaining on Relations
-    </span>
-  </a>
   
 </li>
       
@@ -765,74 +765,145 @@
 
 
 
-<h1 id="relationships-associations">Relationships &amp; Associations</h1>
-<p>Rubik provides a robust relationship system to link models together. Relationships are defined as methods returning a <code>Relation</code> object.</p>
-<h2 id="relationship-types">Relationship Types</h2>
-<h3 id="1-hasone-hasmany">1. HasOne / HasMany</h3>
-<p>The <strong>Inverse</strong> side holds the foreign key.</p>
+<h1 id="schema-definition-migrations">Schema Definition &amp; Migrations</h1>
+<p>Rubik uses a powerful "Code-First" approach. You define your schema using the <code>fields()</code> method within your Model. This allows you to generate, truncate, and drop tables programmatically.</p>
+<h2 id="the-fields-method">The <code>fields()</code> Method</h2>
+<p>Every model must implement this method. It returns an associative array where:</p>
 <ul>
-<li><strong>Parent:</strong> <code>User</code> (ID: 1)</li>
-<li><strong>Child:</strong> <code>Post</code> (user_id: 1)</li>
+<li><strong>Key:</strong> The column name in the database.</li>
+<li><strong>Value:</strong> An array definition returned by the <code>Column</code> class helper.</li>
 </ul>
-<p><strong>User Model:</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="x">public function posts(): HasMany {</span>
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="x">    // (RelatedClass, ForeignKeyOnChild, LocalKeyOnParent)</span>
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="x">    return $this-&gt;hasMany(Post::class, &#39;user_id&#39;, &#39;id&#39;);</span>
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="x">}</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="x">protected static function fields(): array</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="x">{</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="x">    return [</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="x">        &#39;id&#39;         =&gt; Column::Integer(primaryKey: true, autoIncrement: true),</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="x">        &#39;created_at&#39; =&gt; Column::DateTime(default: SQL::raw(&#39;CURRENT_TIMESTAMP&#39;)),</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="x">    ];</span>
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="x">}</span>
 </code></pre></div>
-<h3 id="2-belongsto">2. BelongsTo</h3>
-<p>The <strong>Owning</strong> side holds the foreign key.</p>
-<p><strong>Post Model:</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="x">public function user(): BelongsTo {</span>
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="x">    // (RelatedClass, ForeignKeyOnThis, OwnerKeyOnParent)</span>
-<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="x">    return $this-&gt;belongsTo(User::class, &#39;user_id&#39;, &#39;id&#39;);</span>
-<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="x">}</span>
-</code></pre></div>
-<h3 id="3-belongstomany-many-to-many">3. BelongsToMany (Many-to-Many)</h3>
-<p>Requires a Pivot Table (e.g., <code>role_user</code>).</p>
-<p><strong>User Model:</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="x">public function roles(): BelongsToMany {</span>
-<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="x">    return $this-&gt;belongsToMany(</span>
-<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="x">        related: Role::class,</span>
-<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="x">        pivotTable: &#39;role_user&#39;,</span>
-<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="x">        foreignKey: &#39;user_id&#39;,    // Key in pivot pointing to This</span>
-<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="x">        relatedKey: &#39;role_id&#39;,    // Key in pivot pointing to Related</span>
-<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="x">        parentKey: &#39;id&#39;,          // Key on This</span>
-<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="x">        relatedParentKey: &#39;id&#39;    // Key on Related</span>
-<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a><span class="x">    );</span>
-<a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a><span class="x">}</span>
+<h2 id="the-column-factory">The <code>Column</code> Factory</h2>
+<p>The <code>AdaiasMagdiel\Rubik\Column</code> class is a smart factory. It validates your inputs and maps logical types to driver-specific SQL types.</p>
+<h3 id="available-types-logic">Available Types &amp; Logic</h3>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Method</th>
+<th style="text-align: left;">SQLite Mapping</th>
+<th style="text-align: left;">MySQL Mapping</th>
+<th style="text-align: left;">Validation Rules</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><code>Integer</code></td>
+<td style="text-align: left;"><code>INTEGER</code></td>
+<td style="text-align: left;"><code>INTEGER</code></td>
+<td style="text-align: left;">Default must be int.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>BigInt</code></td>
+<td style="text-align: left;"><code>INTEGER</code></td>
+<td style="text-align: left;"><code>BIGINT</code></td>
+<td style="text-align: left;">-</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>TinyInt</code></td>
+<td style="text-align: left;"><code>INTEGER</code></td>
+<td style="text-align: left;"><code>TINYINT</code></td>
+<td style="text-align: left;">Range check (-128 to 127 or 0-255).</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>Decimal</code></td>
+<td style="text-align: left;"><code>NUMERIC</code></td>
+<td style="text-align: left;"><code>DECIMAL(p,s)</code></td>
+<td style="text-align: left;">Validates precision/scale/max values.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>Boolean</code></td>
+<td style="text-align: left;"><code>INTEGER</code></td>
+<td style="text-align: left;"><code>TINYINT(1)</code></td>
+<td style="text-align: left;">Default must be boolean or 0/1.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>Varchar</code></td>
+<td style="text-align: left;"><code>TEXT</code></td>
+<td style="text-align: left;"><code>VARCHAR(n)</code></td>
+<td style="text-align: left;">Length 1-65535.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>Text</code></td>
+<td style="text-align: left;"><code>TEXT</code></td>
+<td style="text-align: left;"><code>TEXT</code></td>
+<td style="text-align: left;">-</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>Enum</code></td>
+<td style="text-align: left;"><code>TEXT</code></td>
+<td style="text-align: left;"><code>ENUM(...)</code></td>
+<td style="text-align: left;"><code>values</code> array cannot be empty.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>Json</code></td>
+<td style="text-align: left;"><code>TEXT</code></td>
+<td style="text-align: left;"><code>JSON</code></td>
+<td style="text-align: left;">Validates default JSON structure.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>Uuid</code></td>
+<td style="text-align: left;"><code>TEXT</code></td>
+<td style="text-align: left;"><code>CHAR(36)</code></td>
+<td style="text-align: left;">Validates RFC 4122 format.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>DateTime</code></td>
+<td style="text-align: left;"><code>TEXT</code></td>
+<td style="text-align: left;"><code>DATETIME</code></td>
+<td style="text-align: left;">Precision 0-6.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="common-arguments">Common Arguments</h3>
+<p>All <code>Column</code> methods accept these named arguments:</p>
+<ul>
+<li><code>primaryKey</code> (bool): Marks column as PK.</li>
+<li><code>notNull</code> (bool): Adds <code>NOT NULL</code>.</li>
+<li><code>unique</code> (bool): Adds <code>UNIQUE</code> constraint.</li>
+<li><code>default</code> (mixed): The default value (literal or <code>SQL::raw</code>).</li>
+<li><code>autoIncrement</code> (bool): For integer types.</li>
+</ul>
+<h3 id="foreign-keys">Foreign Keys</h3>
+<p>Use the <code>Column::ForeignKey</code> helper to define relations inside the column definition.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="x">&#39;user_id&#39; =&gt; Column::Integer(</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="x">    notNull: true,</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="x">    foreignKey: Column::ForeignKey(</span>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="x">        references: &#39;id&#39;,</span>
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="x">        table: &#39;users&#39;,</span>
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="x">        onDelete: &#39;CASCADE&#39;,</span>
+<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="x">        onUpdate: &#39;NO ACTION&#39;</span>
+<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="x">    )</span>
+<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="x">)</span>
 </code></pre></div>
 <div class="admonition note">
-<p class="admonition-title">Pivot Table Names</p>
+<p class="admonition-title">Driver Awareness</p>
 </div>
-<p>Unlike some ORMs, Rubik requires you to explicitly name the pivot table. It does not guess alphabetical order (e.g., <code>role_user</code> vs <code>user_role</code>).</p>
-<h2 id="loading-strategies">Loading Strategies</h2>
-<h3 id="lazy-loading-magic-property">Lazy Loading (Magic Property)</h3>
-<p>Accessing the relationship as a property triggers a database query immediately. The result is cached on the model instance.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="x">$user = User::find(1);</span>
-<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="x">// Query runs here: SELECT * FROM posts WHERE user_id = 1</span>
-<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="x">$posts = $user-&gt;posts;</span>
+<p>SQLite creates Foreign Keys inline during <code>CREATE TABLE</code>. If you are using SQLite, make sure your tables are created in the correct order (Parents before Children) to satisfy constraint checks.</p>
+<h2 id="ddl-operations">DDL Operations</h2>
+<p>The <code>SchemaTrait</code> provides static methods to manipulate the database structure based on your definition.</p>
+<h3 id="create-table">Create Table</h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="x">// Generates CREATE TABLE IF NOT EXISTS users (...)</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="x">User::createTable(ifNotExists: true);</span>
 </code></pre></div>
-<h3 id="eager-loading-with">Eager Loading (<code>with</code>)</h3>
-<p>Solves the N+1 query problem. Rubik loads all related models in one go and maps them in memory.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="x">$users = User::query()-&gt;with(&#39;posts&#39;, &#39;profile&#39;)-&gt;all();</span>
-<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>
-<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="x">foreach ($users as $user) {</span>
-<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="x">    // No DB query here. $user-&gt;posts is already populated.</span>
-<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="x">    print_r($user-&gt;posts);</span>
-<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="x">}</span>
+<h3 id="drop-table">Drop Table</h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="x">// Generates DROP TABLE IF EXISTS users</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="x">User::dropTable(ifExists: true);</span>
 </code></pre></div>
-<h3 id="how-eager-loading-works-internally">How Eager Loading Works Internally</h3>
-<ol>
-<li><strong>Extract Keys:</strong> Rubik gathers all IDs from the parent <code>$users</code> list.</li>
-<li><strong>Batch Query:</strong> It runs <code>SELECT * FROM posts WHERE user_id IN (1, 2, 3...)</code>.</li>
-<li><strong>Dictionary Map:</strong> It iterates the posts, grouping them by <code>user_id</code>.</li>
-<li><strong>Hydration:</strong> It assigns the groups back to the specific User instances using <code>setRelation()</code>.</li>
-</ol>
-<h2 id="chaining-on-relations">Chaining on Relations</h2>
-<p>Since Relationships act as Query Builders, you can refine them:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="x">// Get only published posts for this user</span>
-<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="x">$published = $user-&gt;posts()-&gt;where(&#39;status&#39;, &#39;published&#39;)-&gt;get();</span>
+<h3 id="truncate-table">Truncate Table</h3>
+<p>Provides a unified interface for clearing data.</p>
+<ul>
+<li><strong>MySQL:</strong> Executes <code>TRUNCATE TABLE</code>.</li>
+<li><strong>SQLite:</strong> Executes <code>DELETE FROM</code> (as TRUNCATE is not supported) and optimizes <code>autoincrement</code>.</li>
+</ul>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="x">User::truncateTable();</span>
 </code></pre></div>
 
 

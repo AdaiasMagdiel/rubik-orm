@@ -11,10 +11,6 @@
       
       
       
-        <link rel="prev" href="../query-builder/">
-      
-      
-        <link rel="next" href="../advanced/">
       
       
       <link rel="icon" href="../assets/images/favicon.png">
@@ -22,7 +18,7 @@
     
     
       
-        <title>Relationships - Rubik ORM</title>
+        <title>Architecture & Deep Reflection - Rubik ORM</title>
       
     
     
@@ -72,7 +68,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#relationships-associations" class="md-skip">
+        <a href="#architecture-deep-reflection" class="md-skip">
           Skip to content
         </a>
       
@@ -106,7 +102,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Relationships
+              Architecture &amp; Deep Reflection
             
           </span>
         </div>
@@ -272,11 +268,9 @@
   
   
   
-    
   
-  
-    <li class="md-tabs__item md-tabs__item--active">
-      <a href="./" class="md-tabs__link">
+    <li class="md-tabs__item">
+      <a href="../relationships/" class="md-tabs__link">
         
   
   
@@ -455,32 +449,10 @@
       
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    Relationships
-    
-  </span>
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../relationships/" class="md-nav__link">
         
   
   
@@ -491,119 +463,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#relationship-types" class="md-nav__link">
-    <span class="md-ellipsis">
-      Relationship Types
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Relationship Types">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#1-hasone-hasmany" class="md-nav__link">
-    <span class="md-ellipsis">
-      1. HasOne / HasMany
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#2-belongsto" class="md-nav__link">
-    <span class="md-ellipsis">
-      2. BelongsTo
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#3-belongstomany-many-to-many" class="md-nav__link">
-    <span class="md-ellipsis">
-      3. BelongsToMany (Many-to-Many)
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#loading-strategies" class="md-nav__link">
-    <span class="md-ellipsis">
-      Loading Strategies
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Loading Strategies">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#lazy-loading-magic-property" class="md-nav__link">
-    <span class="md-ellipsis">
-      Lazy Loading (Magic Property)
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#eager-loading-with" class="md-nav__link">
-    <span class="md-ellipsis">
-      Eager Loading (with)
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#how-eager-loading-works-internally" class="md-nav__link">
-    <span class="md-ellipsis">
-      How Eager Loading Works Internally
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#chaining-on-relations" class="md-nav__link">
-    <span class="md-ellipsis">
-      Chaining on Relations
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -657,37 +516,28 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#relationship-types" class="md-nav__link">
+  <a href="#1-the-schema-definition-strategy-column-meta-programming" class="md-nav__link">
     <span class="md-ellipsis">
-      Relationship Types
+      1. The Schema Definition Strategy (Column Meta-programming)
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Relationship Types">
+    <nav class="md-nav" aria-label="1. The Schema Definition Strategy (Column Meta-programming)">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#1-hasone-hasmany" class="md-nav__link">
+  <a href="#the-mechanism" class="md-nav__link">
     <span class="md-ellipsis">
-      1. HasOne / HasMany
+      The Mechanism
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#2-belongsto" class="md-nav__link">
+  <a href="#reflection" class="md-nav__link">
     <span class="md-ellipsis">
-      2. BelongsTo
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#3-belongstomany-many-to-many" class="md-nav__link">
-    <span class="md-ellipsis">
-      3. BelongsToMany (Many-to-Many)
+      Reflection
     </span>
   </a>
   
@@ -699,37 +549,28 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#loading-strategies" class="md-nav__link">
+  <a href="#2-singleton-connection-pattern" class="md-nav__link">
     <span class="md-ellipsis">
-      Loading Strategies
+      2. Singleton Connection Pattern
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Loading Strategies">
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-the-query-builder-sanitization" class="md-nav__link">
+    <span class="md-ellipsis">
+      3. The Query Builder &amp; Sanitization
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3. The Query Builder &amp; Sanitization">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#lazy-loading-magic-property" class="md-nav__link">
+  <a href="#security-model" class="md-nav__link">
     <span class="md-ellipsis">
-      Lazy Loading (Magic Property)
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#eager-loading-with" class="md-nav__link">
-    <span class="md-ellipsis">
-      Eager Loading (with)
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#how-eager-loading-works-internally" class="md-nav__link">
-    <span class="md-ellipsis">
-      How Eager Loading Works Internally
+      Security Model
     </span>
   </a>
   
@@ -741,9 +582,18 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#chaining-on-relations" class="md-nav__link">
+  <a href="#4-active-record-traits-composition" class="md-nav__link">
     <span class="md-ellipsis">
-      Chaining on Relations
+      4. Active Record &amp; Traits Composition
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5-relationship-resolution" class="md-nav__link">
+    <span class="md-ellipsis">
+      5. Relationship Resolution
     </span>
   </a>
   
@@ -765,75 +615,55 @@
 
 
 
-<h1 id="relationships-associations">Relationships &amp; Associations</h1>
-<p>Rubik provides a robust relationship system to link models together. Relationships are defined as methods returning a <code>Relation</code> object.</p>
-<h2 id="relationship-types">Relationship Types</h2>
-<h3 id="1-hasone-hasmany">1. HasOne / HasMany</h3>
-<p>The <strong>Inverse</strong> side holds the foreign key.</p>
-<ul>
-<li><strong>Parent:</strong> <code>User</code> (ID: 1)</li>
-<li><strong>Child:</strong> <code>Post</code> (user_id: 1)</li>
-</ul>
-<p><strong>User Model:</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="x">public function posts(): HasMany {</span>
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="x">    // (RelatedClass, ForeignKeyOnChild, LocalKeyOnParent)</span>
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="x">    return $this-&gt;hasMany(Post::class, &#39;user_id&#39;, &#39;id&#39;);</span>
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="x">}</span>
-</code></pre></div>
-<h3 id="2-belongsto">2. BelongsTo</h3>
-<p>The <strong>Owning</strong> side holds the foreign key.</p>
-<p><strong>Post Model:</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="x">public function user(): BelongsTo {</span>
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="x">    // (RelatedClass, ForeignKeyOnThis, OwnerKeyOnParent)</span>
-<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="x">    return $this-&gt;belongsTo(User::class, &#39;user_id&#39;, &#39;id&#39;);</span>
-<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="x">}</span>
-</code></pre></div>
-<h3 id="3-belongstomany-many-to-many">3. BelongsToMany (Many-to-Many)</h3>
-<p>Requires a Pivot Table (e.g., <code>role_user</code>).</p>
-<p><strong>User Model:</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="x">public function roles(): BelongsToMany {</span>
-<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="x">    return $this-&gt;belongsToMany(</span>
-<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="x">        related: Role::class,</span>
-<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="x">        pivotTable: &#39;role_user&#39;,</span>
-<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="x">        foreignKey: &#39;user_id&#39;,    // Key in pivot pointing to This</span>
-<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="x">        relatedKey: &#39;role_id&#39;,    // Key in pivot pointing to Related</span>
-<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="x">        parentKey: &#39;id&#39;,          // Key on This</span>
-<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="x">        relatedParentKey: &#39;id&#39;    // Key on Related</span>
-<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a><span class="x">    );</span>
-<a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a><span class="x">}</span>
-</code></pre></div>
-<div class="admonition note">
-<p class="admonition-title">Pivot Table Names</p>
-</div>
-<p>Unlike some ORMs, Rubik requires you to explicitly name the pivot table. It does not guess alphabetical order (e.g., <code>role_user</code> vs <code>user_role</code>).</p>
-<h2 id="loading-strategies">Loading Strategies</h2>
-<h3 id="lazy-loading-magic-property">Lazy Loading (Magic Property)</h3>
-<p>Accessing the relationship as a property triggers a database query immediately. The result is cached on the model instance.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="x">$user = User::find(1);</span>
-<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="x">// Query runs here: SELECT * FROM posts WHERE user_id = 1</span>
-<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="x">$posts = $user-&gt;posts;</span>
-</code></pre></div>
-<h3 id="eager-loading-with">Eager Loading (<code>with</code>)</h3>
-<p>Solves the N+1 query problem. Rubik loads all related models in one go and maps them in memory.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="x">$users = User::query()-&gt;with(&#39;posts&#39;, &#39;profile&#39;)-&gt;all();</span>
-<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>
-<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="x">foreach ($users as $user) {</span>
-<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="x">    // No DB query here. $user-&gt;posts is already populated.</span>
-<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="x">    print_r($user-&gt;posts);</span>
-<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="x">}</span>
-</code></pre></div>
-<h3 id="how-eager-loading-works-internally">How Eager Loading Works Internally</h3>
+<h1 id="architecture-deep-reflection">Architecture &amp; Deep Reflection</h1>
+<p>This section provides a deep dive into the design decisions, trade-offs, and internal mechanics of the Rubik ORM.</p>
+<h2 id="1-the-schema-definition-strategy-column-meta-programming">1. The Schema Definition Strategy (<code>Column</code> Meta-programming)</h2>
+<p>Rubik employs a <strong>Code-First</strong> approach where the schema is the source of truth for validations.</p>
+<h3 id="the-mechanism">The Mechanism</h3>
+<p>The <code>Column</code> class utilizes the <code>__callStatic</code> magic method combined with a constant <code>TYPE_META</code> array. This allows for:</p>
 <ol>
-<li><strong>Extract Keys:</strong> Rubik gathers all IDs from the parent <code>$users</code> list.</li>
-<li><strong>Batch Query:</strong> It runs <code>SELECT * FROM posts WHERE user_id IN (1, 2, 3...)</code>.</li>
-<li><strong>Dictionary Map:</strong> It iterates the posts, grouping them by <code>user_id</code>.</li>
-<li><strong>Hydration:</strong> It assigns the groups back to the specific User instances using <code>setRelation()</code>.</li>
+<li><strong>Driver Abstraction:</strong> A <code>Column::Boolean()</code> is automatically translated to <code>INTEGER</code> for SQLite and <code>TINYINT(1)</code> for MySQL at runtime.</li>
+<li><strong>Input Validation:</strong> Before the schema reaches the database, arguments (like <code>length</code>, <code>precision</code>) are validated via static validators (e.g., <code>validateDecimal</code>).</li>
+<li><strong>Fluency:</strong> It avoids verbose class instantiations (e.g., <code>new Column('varchar', ...)</code>), preferring <code>Column::Varchar(...)</code>.</li>
 </ol>
-<h2 id="chaining-on-relations">Chaining on Relations</h2>
-<p>Since Relationships act as Query Builders, you can refine them:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="x">// Get only published posts for this user</span>
-<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="x">$published = $user-&gt;posts()-&gt;where(&#39;status&#39;, &#39;published&#39;)-&gt;get();</span>
+<h3 id="reflection">Reflection</h3>
+<p>This design centralizes cross-database compatibility logic. Instead of having separate <code>MySqlBuilder</code> and <code>SqliteBuilder</code> classes for schema creation, the <code>SchemaTrait</code> acts as a unified translator based on the current <code>Driver</code> enum.</p>
+<h2 id="2-singleton-connection-pattern">2. Singleton Connection Pattern</h2>
+<p>The <code>Rubik</code> class acts as a global singleton manager for the <code>PDO</code> instance.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="x">private static ?PDO $pdo = null;</span>
 </code></pre></div>
+<p><strong>Trade-off Analysis:</strong></p>
+<ul>
+<li><strong>Pro:</strong> Extremely simple API. <code>Rubik::connect()</code> allows models to access the database anywhere without dependency injection containers.</li>
+<li><strong>Con:</strong> It creates global state. This makes testing slightly harder (requires explicit teardown) and prevents connecting to multiple databases simultaneously within the same request lifecycle (Multi-tenancy via multiple DBs is not natively supported).</li>
+</ul>
+<h2 id="3-the-query-builder-sanitization">3. The Query Builder &amp; Sanitization</h2>
+<p>The <code>Query</code> class is responsible for building SQL. It maintains internal state (<code>$select</code>, <code>$where</code>, <code>$bindings</code>) and compiles them into a string only upon execution.</p>
+<h3 id="security-model">Security Model</h3>
+<p>Rubik strictly separates <strong>Identifiers</strong> from <strong>Values</strong>.</p>
+<ul>
+<li><strong>Identifiers</strong> (Table/Column names) are sanitized via <code>Rubik::quoteIdentifier()</code>. This handles wrapping names in backticks (MySQL) or double quotes (SQLite).</li>
+<li><strong>Values</strong> are <strong>never</strong> injected directly into the SQL string unless wrapped in an <code>SQL</code> Value Object. They are passed as PDO parameters.</li>
+</ul>
+<p>This dual-layer approach effectively mitigates SQL Injection risks while allowing flexibility via <code>SQL::raw()</code>.</p>
+<h2 id="4-active-record-traits-composition">4. Active Record &amp; Traits Composition</h2>
+<p>The <code>Model</code> class is abstract and relatively empty. It derives its power almost entirely from Traits:</p>
+<ul>
+<li><code>CrudTrait</code>: Persistence logic.</li>
+<li><code>SchemaTrait</code>: DDL generation.</li>
+<li><code>QueryTrait</code>: Static proxies.</li>
+</ul>
+<p><strong>Reflective Benefit:</strong> This composition over inheritance allows the core <code>Model</code> class to remain readable. It physically separates the concern of <em>defining</em> data (<code>SchemaTrait</code>) from <em>saving</em> data (<code>CrudTrait</code>).</p>
+<h2 id="5-relationship-resolution">5. Relationship Resolution</h2>
+<p>The <code>Relation</code> abstract class and its children (<code>HasMany</code>, etc.) act as specialized Query Builders.</p>
+<p>When <code>with('posts')</code> is called:</p>
+<ol>
+<li><strong>Hydration:</strong> The main query fetches parent models.</li>
+<li><strong>Collection:</strong> Keys (e.g., User IDs) are collected from the parents.</li>
+<li><strong>Batch Query:</strong> The relationship executes <code>WHERE user_id IN (...)</code>.</li>
+<li><strong>Dictionary Matching:</strong> Results are mapped back to parents in memory.</li>
+</ol>
+<p>Rubik manually handles this matching in <code>Query::eagerLoadRelations</code>, keeping the logic framework-agnostic.</p>
 
 
 

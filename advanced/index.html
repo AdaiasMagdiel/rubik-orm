@@ -11,10 +11,8 @@
       
       
       
-        <link rel="prev" href="../query-builder/">
+        <link rel="prev" href="../relationships/">
       
-      
-        <link rel="next" href="../advanced/">
       
       
       <link rel="icon" href="../assets/images/favicon.png">
@@ -22,7 +20,7 @@
     
     
       
-        <title>Relationships - Rubik ORM</title>
+        <title>Advanced Topics - Rubik ORM</title>
       
     
     
@@ -72,7 +70,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#relationships-associations" class="md-skip">
+        <a href="#advanced-topics" class="md-skip">
           Skip to content
         </a>
       
@@ -106,7 +104,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Relationships
+              Advanced Topics
             
           </span>
         </div>
@@ -272,11 +270,9 @@
   
   
   
-    
   
-  
-    <li class="md-tabs__item md-tabs__item--active">
-      <a href="./" class="md-tabs__link">
+    <li class="md-tabs__item">
+      <a href="../relationships/" class="md-tabs__link">
         
   
   
@@ -293,9 +289,11 @@
   
   
   
+    
   
-    <li class="md-tabs__item">
-      <a href="../advanced/" class="md-tabs__link">
+  
+    <li class="md-tabs__item md-tabs__item--active">
+      <a href="./" class="md-tabs__link">
         
   
   
@@ -455,6 +453,28 @@
       
   
   
+  
+  
+    <li class="md-nav__item">
+      <a href="../relationships/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Relationships
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
     
   
   
@@ -472,7 +492,7 @@
   
   
   <span class="md-ellipsis">
-    Relationships
+    Advanced Topics
     
   </span>
   
@@ -485,7 +505,7 @@
   
   
   <span class="md-ellipsis">
-    Relationships
+    Advanced Topics
     
   </span>
   
@@ -508,37 +528,28 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#relationship-types" class="md-nav__link">
+  <a href="#transactions" class="md-nav__link">
     <span class="md-ellipsis">
-      Relationship Types
+      Transactions
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Relationship Types">
+    <nav class="md-nav" aria-label="Transactions">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#1-hasone-hasmany" class="md-nav__link">
+  <a href="#helper-method-recommended" class="md-nav__link">
     <span class="md-ellipsis">
-      1. HasOne / HasMany
+      Helper Method (Recommended)
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#2-belongsto" class="md-nav__link">
+  <a href="#manual-control" class="md-nav__link">
     <span class="md-ellipsis">
-      2. BelongsTo
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#3-belongstomany-many-to-many" class="md-nav__link">
-    <span class="md-ellipsis">
-      3. BelongsToMany (Many-to-Many)
+      Manual Control
     </span>
   </a>
   
@@ -550,51 +561,36 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#loading-strategies" class="md-nav__link">
+  <a href="#security-the-sql-value-object" class="md-nav__link">
     <span class="md-ellipsis">
-      Loading Strategies
+      Security: The SQL Value Object
     </span>
   </a>
-  
-    <nav class="md-nav" aria-label="Loading Strategies">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#lazy-loading-magic-property" class="md-nav__link">
-    <span class="md-ellipsis">
-      Lazy Loading (Magic Property)
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#eager-loading-with" class="md-nav__link">
-    <span class="md-ellipsis">
-      Eager Loading (with)
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#how-eager-loading-works-internally" class="md-nav__link">
-    <span class="md-ellipsis">
-      How Eager Loading Works Internally
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#chaining-on-relations" class="md-nav__link">
+  <a href="#identifiers-vs-values" class="md-nav__link">
     <span class="md-ellipsis">
-      Chaining on Relations
+      Identifiers vs Values
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#scopes-magic-methods" class="md-nav__link">
+    <span class="md-ellipsis">
+      Scopes (Magic Methods)
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#handling-database-differences" class="md-nav__link">
+    <span class="md-ellipsis">
+      Handling Database Differences
     </span>
   </a>
   
@@ -604,28 +600,6 @@
   
 </nav>
       
-    </li>
-  
-
-    
-      
-      
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../advanced/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    Advanced Topics
-    
-  </span>
-  
-
-      </a>
     </li>
   
 
@@ -657,37 +631,28 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#relationship-types" class="md-nav__link">
+  <a href="#transactions" class="md-nav__link">
     <span class="md-ellipsis">
-      Relationship Types
+      Transactions
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Relationship Types">
+    <nav class="md-nav" aria-label="Transactions">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#1-hasone-hasmany" class="md-nav__link">
+  <a href="#helper-method-recommended" class="md-nav__link">
     <span class="md-ellipsis">
-      1. HasOne / HasMany
+      Helper Method (Recommended)
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#2-belongsto" class="md-nav__link">
+  <a href="#manual-control" class="md-nav__link">
     <span class="md-ellipsis">
-      2. BelongsTo
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#3-belongstomany-many-to-many" class="md-nav__link">
-    <span class="md-ellipsis">
-      3. BelongsToMany (Many-to-Many)
+      Manual Control
     </span>
   </a>
   
@@ -699,51 +664,36 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#loading-strategies" class="md-nav__link">
+  <a href="#security-the-sql-value-object" class="md-nav__link">
     <span class="md-ellipsis">
-      Loading Strategies
+      Security: The SQL Value Object
     </span>
   </a>
-  
-    <nav class="md-nav" aria-label="Loading Strategies">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#lazy-loading-magic-property" class="md-nav__link">
-    <span class="md-ellipsis">
-      Lazy Loading (Magic Property)
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#eager-loading-with" class="md-nav__link">
-    <span class="md-ellipsis">
-      Eager Loading (with)
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#how-eager-loading-works-internally" class="md-nav__link">
-    <span class="md-ellipsis">
-      How Eager Loading Works Internally
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#chaining-on-relations" class="md-nav__link">
+  <a href="#identifiers-vs-values" class="md-nav__link">
     <span class="md-ellipsis">
-      Chaining on Relations
+      Identifiers vs Values
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#scopes-magic-methods" class="md-nav__link">
+    <span class="md-ellipsis">
+      Scopes (Magic Methods)
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#handling-database-differences" class="md-nav__link">
+    <span class="md-ellipsis">
+      Handling Database Differences
     </span>
   </a>
   
@@ -765,75 +715,75 @@
 
 
 
-<h1 id="relationships-associations">Relationships &amp; Associations</h1>
-<p>Rubik provides a robust relationship system to link models together. Relationships are defined as methods returning a <code>Relation</code> object.</p>
-<h2 id="relationship-types">Relationship Types</h2>
-<h3 id="1-hasone-hasmany">1. HasOne / HasMany</h3>
-<p>The <strong>Inverse</strong> side holds the foreign key.</p>
-<ul>
-<li><strong>Parent:</strong> <code>User</code> (ID: 1)</li>
-<li><strong>Child:</strong> <code>Post</code> (user_id: 1)</li>
-</ul>
-<p><strong>User Model:</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="x">public function posts(): HasMany {</span>
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="x">    // (RelatedClass, ForeignKeyOnChild, LocalKeyOnParent)</span>
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="x">    return $this-&gt;hasMany(Post::class, &#39;user_id&#39;, &#39;id&#39;);</span>
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="x">}</span>
+<h1 id="advanced-topics">Advanced Topics</h1>
+<h2 id="transactions">Transactions</h2>
+<p>Rubik wraps PDO transactions. You must ensure your tables support transactions (e.g., InnoDB for MySQL).</p>
+<h3 id="helper-method-recommended">Helper Method (Recommended)</h3>
+<p>The <code>transaction</code> method automatically commits on success and rolls back if <em>any</em> <code>Throwable</code> is caught.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="x">try {</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="x">    Rubik::transaction(function() {</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="x">        $u = new User();</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="x">        $u-&gt;save();</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="x">        if (somethingWrong()) {</span>
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="x">            throw new Exception(&quot;Rollback!&quot;);</span>
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="x">        }</span>
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="x">    });</span>
+<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="x">} catch (Exception $e) {</span>
+<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="x">    // Transaction already rolled back here</span>
+<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a><span class="x">}</span>
 </code></pre></div>
-<h3 id="2-belongsto">2. BelongsTo</h3>
-<p>The <strong>Owning</strong> side holds the foreign key.</p>
-<p><strong>Post Model:</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="x">public function user(): BelongsTo {</span>
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="x">    // (RelatedClass, ForeignKeyOnThis, OwnerKeyOnParent)</span>
-<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="x">    return $this-&gt;belongsTo(User::class, &#39;user_id&#39;, &#39;id&#39;);</span>
-<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="x">}</span>
+<h3 id="manual-control">Manual Control</h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="x">Rubik::beginTransaction();</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="x">// ... logic</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="x">Rubik::commit();</span>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="x">// or</span>
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="x">Rubik::rollBack();</span>
 </code></pre></div>
-<h3 id="3-belongstomany-many-to-many">3. BelongsToMany (Many-to-Many)</h3>
-<p>Requires a Pivot Table (e.g., <code>role_user</code>).</p>
-<p><strong>User Model:</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="x">public function roles(): BelongsToMany {</span>
-<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="x">    return $this-&gt;belongsToMany(</span>
-<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="x">        related: Role::class,</span>
-<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="x">        pivotTable: &#39;role_user&#39;,</span>
-<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="x">        foreignKey: &#39;user_id&#39;,    // Key in pivot pointing to This</span>
-<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="x">        relatedKey: &#39;role_id&#39;,    // Key in pivot pointing to Related</span>
-<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="x">        parentKey: &#39;id&#39;,          // Key on This</span>
-<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="x">        relatedParentKey: &#39;id&#39;    // Key on Related</span>
-<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a><span class="x">    );</span>
-<a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a><span class="x">}</span>
+<h2 id="security-the-sql-value-object">Security: The <code>SQL</code> Value Object</h2>
+<p>Rubik automatically escapes all inputs passed to <code>where</code>, <code>insert</code>, and <code>update</code>. However, sometimes you need to pass raw SQL (e.g., database functions).</p>
+<p>To do this securely, use the <code>AdaiasMagdiel\Rubik\SQL</code> class. Rubik detects instances of this class and injects the string <strong>verbatim</strong>.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="x">use AdaiasMagdiel\Rubik\SQL;</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="x">// BAD: Potentially unsafe if $input is dirty</span>
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="x">$q-&gt;update([&#39;updated_at&#39; =&gt; &quot;NOW()&quot;]); // Will define string &quot;NOW()&quot;</span>
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="x">// GOOD:</span>
+<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="x">$q-&gt;update([&#39;updated_at&#39; =&gt; SQL::raw(&#39;NOW()&#39;)]); // Will execute SQL function</span>
 </code></pre></div>
-<div class="admonition note">
-<p class="admonition-title">Pivot Table Names</p>
+<div class="admonition danger">
+<p class="admonition-title">Security Warning</p>
 </div>
-<p>Unlike some ORMs, Rubik requires you to explicitly name the pivot table. It does not guess alphabetical order (e.g., <code>role_user</code> vs <code>user_role</code>).</p>
-<h2 id="loading-strategies">Loading Strategies</h2>
-<h3 id="lazy-loading-magic-property">Lazy Loading (Magic Property)</h3>
-<p>Accessing the relationship as a property triggers a database query immediately. The result is cached on the model instance.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="x">$user = User::find(1);</span>
-<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="x">// Query runs here: SELECT * FROM posts WHERE user_id = 1</span>
-<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="x">$posts = $user-&gt;posts;</span>
+<p><strong>NEVER</strong> pass user-supplied data into <code>SQL::raw()</code>.</p>
+<div class="highlight"><pre><span></span><code>Bad: `SQL::raw(&quot;dATEDIFF(now(), &#39;$userInput&#39;)&quot;)` -&gt; **SQL Injection**.
+Good: `where(&#39;date&#39;, &#39;&lt;&#39;, $userInput)` -&gt; **Safe (Parameterized)**.
 </code></pre></div>
-<h3 id="eager-loading-with">Eager Loading (<code>with</code>)</h3>
-<p>Solves the N+1 query problem. Rubik loads all related models in one go and maps them in memory.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="x">$users = User::query()-&gt;with(&#39;posts&#39;, &#39;profile&#39;)-&gt;all();</span>
-<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>
-<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="x">foreach ($users as $user) {</span>
-<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="x">    // No DB query here. $user-&gt;posts is already populated.</span>
-<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="x">    print_r($user-&gt;posts);</span>
-<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="x">}</span>
-</code></pre></div>
-<h3 id="how-eager-loading-works-internally">How Eager Loading Works Internally</h3>
+<h2 id="identifiers-vs-values">Identifiers vs Values</h2>
+<p>Rubik internally distinguishes between:</p>
 <ol>
-<li><strong>Extract Keys:</strong> Rubik gathers all IDs from the parent <code>$users</code> list.</li>
-<li><strong>Batch Query:</strong> It runs <code>SELECT * FROM posts WHERE user_id IN (1, 2, 3...)</code>.</li>
-<li><strong>Dictionary Map:</strong> It iterates the posts, grouping them by <code>user_id</code>.</li>
-<li><strong>Hydration:</strong> It assigns the groups back to the specific User instances using <code>setRelation()</code>.</li>
+<li><strong>Identifiers:</strong> Table names and Column names. These are sanitized via <code>quoteIdentifier</code> (adds backticks <code>`</code> or double quotes <code>"</code>).</li>
+<li><strong>Values:</strong> Data content. These are parameterized as <code>:placeholder</code>.</li>
 </ol>
-<h2 id="chaining-on-relations">Chaining on Relations</h2>
-<p>Since Relationships act as Query Builders, you can refine them:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="x">// Get only published posts for this user</span>
-<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="x">$published = $user-&gt;posts()-&gt;where(&#39;status&#39;, &#39;published&#39;)-&gt;get();</span>
+<h2 id="scopes-magic-methods">Scopes (Magic Methods)</h2>
+<p>You can define reusable query logic in your Model using the <code>scope</code> prefix.</p>
+<p><strong>Definition:</strong></p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="x">class User extends Model {</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="x">    public function scopeActive(Query $query) {</span>
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="x">        $query-&gt;where(&#39;status&#39;, &#39;active&#39;);</span>
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="x">    }</span>
+<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="x">}</span>
 </code></pre></div>
+<p><strong>Usage:</strong></p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="x">// Call it without the &#39;scope&#39; prefix</span>
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="x">$users = User::active()-&gt;orderBy(&#39;id&#39;)-&gt;all();</span>
+</code></pre></div>
+<h2 id="handling-database-differences">Handling Database Differences</h2>
+<p>Rubik attempts to abstract differences, but some leak through:</p>
+<ol>
+<li><strong>Auto-Increment:</strong> SQLite handles standard <code>INTEGER PRIMARY KEY</code> as auto-increment. MySQL requires the explicit <code>AUTO_INCREMENT</code> flag. Rubik's <code>SchemaTrait</code> handles this generation logic.</li>
+<li><strong>String vs Text:</strong> In SQLite, <code>VARCHAR</code> is mapped to <code>TEXT</code>. In MySQL, strict lengths are enforced.</li>
+<li><strong>JSON:</strong> MySQL has a native <code>JSON</code> type. SQLite stores it as <code>TEXT</code>. Rubik validates JSON validity in PHP before saving to ensure consistency.</li>
+</ol>
 
 
 
