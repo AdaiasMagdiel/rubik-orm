@@ -1,78 +1,30 @@
 site_name: Rubik ORM
-site_description: Lightweight driver-aware ORM for PHP with SQLite and MySQL support
-site_url: https://adaiasmagdiel.github.io/rubik-orm/
-site_author: Adaías Magdiel
-repo_url: https://github.com/adaiasmagdiel/rubik-orm
-repo_name: adaiasmagdiel/rubik-orm
-edit_uri: edit/main/docs/
-copyright: "© 2025 Adaías Magdiel. Licensed under GPLv3."
-
+site_description: The definitive reference for the Rubik Object-Relational Mapper.
 theme:
   name: material
-  language: en
-  logo: assets/logo.svg
-  favicon: assets/favicon.ico
+  palette:
+    scheme: slate
+    primary: teal
   features:
-    - navigation.instant
+    - navigation.tabs
     - navigation.sections
     - navigation.expand
-    - content.code.annotate
     - content.code.copy
-    - content.tabs.link
-    - search.highlight
-    - toc.integrate
-  palette:
-    - scheme: default
-      primary: deep purple
-      accent: lime
-  font:
-    text: Inter
-    code: JetBrains Mono
+    - content.code.annotate
 
-extra:
-  social:
-    - icon: fontawesome/brands/github
-      link: https://github.com/adaiasmagdiel/rubik-orm
-      name: Rubik ORM on GitHub
-    - icon: fontawesome/brands/php
-      link: https://www.php.net/
-      name: PHP Official Site
-  generator: false
+nav:
+  - Introduction: index.md
+  - Getting Started: getting-started.md
+  - Schema & Migrations: schema-definition.md
+  - Models & Lifecycle: models-lifecycle.md
+  - Query Builder: query-builder.md
+  - Relationships: relationships.md
+  - Advanced Topics: advanced.md
 
 markdown_extensions:
-  - admonition
-  - toc:
-      permalink: true
-  - tables
   - pymdownx.highlight:
       anchor_linenums: true
   - pymdownx.superfences
-  - pymdownx.tabbed:
-      alternate_style: true
   - pymdownx.details
-  - pymdownx.snippets:
-      check_paths: true
+  - admonition
   - attr_list
-  - def_list
-  - md_in_html
-
-plugins:
-  - search
-  - autorefs
-
-nav:
-  - Home: index.md
-  - Getting Started: getting-started.md
-  - Configuration: configuration.md
-  - Database Connections: connections.md
-  - Models: models.md
-  - Query Builder: queries.md
-  - Relationships: relationships.md
-  - SQL Raw Expressions: sql-raw.md
-  - API Reference:
-      - Model: reference/model.md
-      - Query: reference/query.md
-      - Rubik: reference/rubik.md
-      - Column: reference/column.md
-      - SQL: reference/sql.md
-      - Traits: reference/traits.md
