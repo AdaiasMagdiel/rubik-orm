@@ -7,6 +7,7 @@ use PDO;
 use PDOException;
 use RuntimeException;
 use InvalidArgumentException;
+use Throwable;
 
 /**
  * Manages database connections for the Rubik ORM using PDO.
@@ -54,11 +55,16 @@ class Rubik
      * the driver and driver-specific settings (e.g., path for SQLite, host and database for MySQL).
      * Enables foreign key support for SQLite connections.
      *
-     * @param array<string, mixed> $config The database configuration array.
-     *                                    Must include 'driver' and driver-specific settings:
-     *                                    - For SQLite: 'path' (file path or ':memory:').
-     *                                    - For MySQL/MariaDB: 'host', 'port', 'database', 'charset' (optional).
-     *                                    Optionally includes 'username', 'password', and 'options'.
+     * @param Driver $driver The database driver enum (SQLITE or MYSQL).
+     * @param string $username Database username (optional).
+     * @param string $password Database password (optional).
+     * @param string $database Database name (for MySQL).
+     * @param int $port Database port (default: 3306).
+     * @param string $host Database host (default: localhost).
+     * @param string $charset Database charset (default: utf8mb4).
+     * @param string $path SQLite database path (default: :memory:).
+     * @param array $options Additional PDO options.
+     * 
      * @return void
      * @throws InvalidArgumentException If the driver is missing, unsupported, or configuration is invalid.
      * @throws RuntimeException If the connection fails due to a PDOException.
@@ -153,7 +159,7 @@ class Rubik
     /**
      * Retrieves the database driver in use.
      *
-     * @return The current driver (e.g., Driver::SQLITE or DRIVER::MYSQL).
+     * @return Driver The current driver (e.g., Driver::SQLITE or DRIVER::MYSQL).
      */
     public static function getDriver(): Driver
     {
@@ -214,10 +220,20 @@ class Rubik
         };
     }
 
+    /**
+     * Quotes a string identifier (table or column name) based on the active driver.
+     *
+     * Handles simple names (e.g., "users") and qualified names (e.g., "users.id"),
+     * wrapping them in backticks (MySQL) or double quotes (SQLite/PostgreSQL).
+     *
+     * @param string $identifier The identifier to quote.
+     * @return string The quoted identifier string.
+     */
     public static function quoteIdentifier(string $identifier): string
     {
         $char = self::getDriver() === Driver::MYSQL ? '`' : '"';
-        $identifier = str_replace($char, '', $identifier);
+
+        $identifier = str_replace($char, $char . $char, $identifier);
 
         if (str_contains($identifier, '.')) {
             $parts = explode('.', $identifier);
@@ -225,5 +241,59 @@ class Rubik
         }
 
         return $char . $identifier . $char;
+    }
+
+    /**
+     * Initiates a transaction inside the database.
+     * 
+     * @return bool True on success, false on failure.
+     */
+    public static function beginTransaction(): bool
+    {
+        return self::getConn()->beginTransaction();
+    }
+
+    /**
+     * Commits the active transaction.
+     * 
+     * @return bool True on success, false on failure.
+     */
+    public static function commit(): bool
+    {
+        return self::getConn()->commit();
+    }
+
+    /**
+     * Rolls back the active transaction.
+     * 
+     * @return bool True on success, false on failure.
+     */
+    public static function rollBack(): bool
+    {
+        return self::getConn()->rollBack();
+    }
+
+    /**
+     * Executes a set of operations within a database transaction.
+     * 
+     * If the callback throws an exception, the transaction is automatically rolled back.
+     * If the callback executes successfully, the transaction is committed.
+     *
+     * @param callable $callback The function containing database logic.
+     * @return mixed The return value of the callback.
+     * @throws Throwable Re-throws the exception after rolling back.
+     */
+    public static function transaction(callable $callback): mixed
+    {
+        self::beginTransaction();
+
+        try {
+            $result = $callback();
+            self::commit();
+            return $result;
+        } catch (Throwable $e) {
+            self::rollBack();
+            throw $e;
+        }
     }
 }

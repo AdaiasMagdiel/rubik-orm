@@ -2,6 +2,10 @@
 
 namespace AdaiasMagdiel\Rubik;
 
+use AdaiasMagdiel\Rubik\Relation\BelongsTo;
+use AdaiasMagdiel\Rubik\Relation\HasMany;
+use AdaiasMagdiel\Rubik\Relation\HasOne;
+use BadMethodCallException;
 use Generator;
 use PDO;
 use PDOStatement;
@@ -9,16 +13,16 @@ use RuntimeException;
 use InvalidArgumentException;
 
 /**
- * Query Builder for Rubik ORM
+ * Query Builder for Rubik ORM.
  * 
  * Provides a fluent interface for constructing and executing SQL queries.
  * Supports SELECT, INSERT, UPDATE, DELETE operations with conditions, joins,
  * pagination, and automatic model hydration.
  * 
  * Security Features:
- * - All user inputs are sanitized to prevent SQL injection
- * - Prepared statements with parameter binding
- * - Strict validation of operators and identifiers
+ * - All user inputs are sanitized to prevent SQL injection.
+ * - Prepared statements with parameter binding.
+ * - Strict validation of operators and identifiers.
  * 
  * @package AdaiasMagdiel\Rubik
  * @author  Adaías Magdiel
@@ -30,98 +34,99 @@ class Query
     // ============================================================================
 
     /**
-     * Fully qualified model class name
+     * Fully qualified model class name.
      * 
      * @var string
      */
     private string $model = '';
 
     /**
-     * Target table name (sanitized)
+     * Target table name (sanitized).
      * 
      * @var string
      */
     private string $table = '';
 
     /**
-     * Current operation type (SELECT, INSERT, UPDATE, DELETE)
+     * Current operation type (SELECT, INSERT, UPDATE, DELETE).
      * 
      * @var string
      */
     private string $operation = 'SELECT';
 
     /**
-     * SELECT clause fields
+     * SELECT clause fields.
      * 
      * @var array<int, string>
      */
     private array $select = [];
 
     /**
-     * WHERE clause conditions
+     * WHERE clause conditions.
      * 
      * @var array<int, string>
      */
     private array $where = [];
 
     /**
-     * PDO parameter bindings
+     * PDO parameter bindings.
      * 
      * @var array<string, mixed>
      */
     private array $bindings = [];
 
     /**
-     * ORDER BY clause
+     * ORDER BY clause.
      * 
      * @var array<int, string>
      */
     private array $orderBy = [];
 
     /**
-     * GROUP BY clause
+     * GROUP BY clause.
      * 
      * @var array<int, string>
      */
     private array $groupBy = [];
 
     /**
-     * HAVING clause conditions
+     * HAVING clause conditions.
      * 
      * @var array<int, string>
      */
     private array $having = [];
 
     /**
-     * JOIN clauses
+     * JOIN clauses.
      * 
      * @var array<int, string>
      */
     private array $joins = [];
 
     /**
-     * LIMIT value (-1 means no limit)
+     * LIMIT value (-1 means no limit).
      * 
      * @var int
      */
     private int $limit = -1;
 
     /**
-     * OFFSET value (-1 means no offset)
+     * OFFSET value (-1 means no offset).
      * 
      * @var int
      */
     private int $offset = -1;
 
     /**
-     * Query execution log for debugging
+     * Query execution log for debugging.
      * 
      * @var array<int, array{sql: string, bindings: array<string, mixed>, time: float}>
      */
     private array $queryLog = [];
 
     /**
-     * Relationships to eager load.
+     * List of relationships to be eager loaded.
+     * 
      * @var array<int, string>
      */
     private array $eagerLoad = [];
@@ -131,13 +136,13 @@ class Query
     // ============================================================================
 
     /**
-     * Set the target table name
+     * Sets the target table name.
      * 
-     * @param string $table Table name (will be sanitized)
+     * @param string $table Table name (will be sanitized).
      * 
      * @return self
      * 
-     * @throws InvalidArgumentException If table name contains invalid characters
+     * @throws InvalidArgumentException If table name contains invalid characters.
      */
     public function setTable(string $table): self
     {
@@ -146,14 +151,14 @@ class Query
     }
 
     /**
-     * Set the model class and automatically resolve table name
+     * Sets the model class and automatically resolves the table name.
      * 
-     * @param string $model Fully qualified model class name
+     * @param string $model Fully qualified model class name.
      * 
      * @return self
      * 
-     * @throws RuntimeException If model class does not exist
-     * @throws InvalidArgumentException If table name is invalid
+     * @throws RuntimeException If the model class does not exist.
+     * @throws InvalidArgumentException If the resolved table name is invalid.
      */
     public function setModel(string $model): self
     {
@@ -168,9 +173,9 @@ class Query
     }
 
     /**
-     * Set relationships to be eager loaded.
+     * Sets relationships to be eager loaded.
      *
-     * @param string|array $relations Relationship names.
+     * @param string|array<int, string> $relations Relationship names to load.
      * @return self
      */
     public function with(string|array $relations): self
@@ -187,34 +192,23 @@ class Query
     // ============================================================================
 
     /**
-     * Specify which columns to select
+     * Specifies which columns to select.
      * 
      * Supports:
      * - Single column: select('id')
      * - Multiple columns: select(['id', 'name', 'email'])
      * - Column aliases: select(['id', 'name AS user_name'])
-     * - SQL expressions: select(['COUNT(*) AS total', 'MAX(age)'])
+     * - SQL expressions: select([SQL::raw('COUNT(*) AS total')])
      * - All columns: select('*') or select()
      * 
-     * When using a model, the primary key is automatically included.
+     * When using a model, the primary key is automatically included unless
+     * the query consists purely of raw SQL expressions (aggregates).
      * 
-     * Note: SQL functions and expressions are allowed but must be
-     * explicitly marked as safe by not containing dangerous patterns.
-     * 
-     * @param string|array<int, string> $fields Column names or '*' for all
+     * @param string|array<int, string|SQL> $fields Column names, SQL instances, or '*' for all.
      * 
      * @return self
      * 
-     * @throws InvalidArgumentException If column name or alias format is invalid
-     * 
-     * @example
-     * ```php
-     * $query->select(['id', 'name', 'email AS user_email']);
-     * // SELECT id, name, email AS user_email FROM users
-     * 
-     * $query->select(['COUNT(*) AS total', 'status']);
-     * // SELECT COUNT(*) AS total, status FROM users
-     * ```
+     * @throws InvalidArgumentException If column name or alias format is invalid.
      */
     public function select(string|array $fields = '*'): self
     {
@@ -226,47 +220,64 @@ class Query
             return $this;
         }
 
-        $pk = $this->model ? $this->model::primaryKey() : 'id';
-        $qualifiedPk = $this->table . '.' . $pk;
-
         // Sanitize and validate all fields
         $sanitizedFields = [];
+        // Track if we are selecting standard columns (to decide on PK injection)
+        $hasStandardColumn = false;
+
         foreach ($fields as $field) {
-            if (str_contains($field, ' AS ')) {
-                // Handle aliases: "column AS alias" or "FUNCTION() AS alias"
-                preg_match('/^(.+?)\s+AS\s+(.+)$/i', trim($field), $matches);
-                if (!$matches) {
-                    throw new InvalidArgumentException("Invalid alias format: $field");
-                }
+            // Case 1: Explicit Raw SQL Instance
+            if ($field instanceof SQL) {
+                $sanitizedFields[] = (string) $field;
+                continue;
+            }
 
-                $column = trim($matches[1]);
-                $alias = $this->sanitizeIdentifier(trim($matches[2]));
+            if (!is_string($field)) {
+                throw new InvalidArgumentException('Fields must be strings or SQL instances.');
+            }
 
-                // Allow SQL expressions in SELECT (they're not user-controlled table/column names)
-                // Just validate the alias is safe
-                $sanitizedFields[] = "$column AS $alias";
-            } else {
-                // Try to sanitize as column reference, but allow SQL functions
-                if ($this->isSqlExpression($field)) {
-                    // It's a SQL expression like COUNT(*), LENGTH(name), etc.
-                    $sanitizedFields[] = $field;
-                } else {
-                    // It's a plain column reference
-                    $sanitizedFields[] = Rubik::quoteIdentifier($column);
-                }
+            $trimmedField = trim($field);
+
+            // Case 2: Handle Aliases (e.g., "column AS alias")
+            // Note: We only support "col AS alias". "COUNT(*) AS alias" must use SQL::raw()
+            if (preg_match('/^(.*?)\s+AS\s+(.*?)$/i', $trimmedField, $matches)) {
+                $column = $matches[1];
+                $alias = $matches[2];
+
+                $safeColumn = Rubik::quoteIdentifier($column);
+                $safeAlias = Rubik::quoteIdentifier($alias);
+
+                $sanitizedFields[] = "$safeColumn AS $safeAlias";
+                $hasStandardColumn = true;
+            }
+            // Case 3: Standard Column
+            else {
+                $sanitizedFields[] = Rubik::quoteIdentifier($trimmedField);
+                $hasStandardColumn = true;
             }
         }
 
-        $hasColumnReference = false;
-        foreach ($sanitizedFields as $field) {
-            if (!$this->isSqlExpression($field)) {
-                $hasColumnReference = true;
-                break;
-            }
-        }
+        // Logic to ensure Primary Key is selected if we are querying a Model
+        // and we are selecting actual columns (not just aggregates via SQL::raw)
+        if ($this->model && $hasStandardColumn) {
+            $pk = $this->model::primaryKey();
+            $quotedPk = Rubik::quoteIdentifier($pk);
+            $quotedQualifiedPk = Rubik::quoteIdentifier($this->table) . '.' . $quotedPk;
 
-        if ($hasColumnReference && !in_array($qualifiedPk, $sanitizedFields, true) && !in_array('*', $sanitizedFields, true)) {
-            array_unshift($sanitizedFields, $qualifiedPk);
+            // Check if the PK is already present in the sanitized list
+            $pkIsSelected = false;
+            foreach ($sanitizedFields as $sf) {
+                // Strip alias for comparison: "`col` AS `alias`" -> "`col`"
+                $colPart = preg_split('/\s+AS\s+/i', $sf)[0];
+                if ($colPart === $quotedPk || $colPart === $quotedQualifiedPk || $colPart === '*') {
+                    $pkIsSelected = true;
+                    break;
+                }
+            }
+
+            if (!$pkIsSelected) {
+                array_unshift($sanitizedFields, $quotedQualifiedPk);
+            }
         }
 
         $this->select = array_unique($sanitizedFields);
@@ -274,45 +285,69 @@ class Query
     }
 
     /**
-     * Eager loads relationships for the given models.
+     * Eager load the specified relationships for a collection of models.
+     *
+     * This method preloads related models in bulk to avoid the N+1 query problem.
+     * It dynamically resolves each relationship definition, executes the
+     * appropriate queries, and hydrates the related results back into
+     * the given models.
+     *
+     * Supported relationship types:
+     * - BelongsTo
+     * - HasOne
+     * - HasMany
+     *
+     * Resolution strategy:
+     * - BelongsTo:
+     *   Collects all foreign key values from the parent models, queries the
+     *   related model using the owner key, and maps the results back by key.
+     *
+     * - HasOne / HasMany:
+     *   Collects all local key values from the parent models, queries the
+     *   related model using the foreign key, and groups the results by key.
+     *
+     * Once resolved, each relationship result is cached on the model via
+     * setRelation(), preventing additional queries on subsequent access.
+     *
+     * @param array<int, Model> $models
+     *        The collection of parent models to eager load relations for.
+     *
+     * @return void
      */
     private function eagerLoadRelations(array $models): void
     {
-        $definitions = $this->model::relationships();
+        $instance = new $this->model();
 
         foreach ($this->eagerLoad as $relationName) {
-            if (!isset($definitions[$relationName])) {
+            if (!method_exists($instance, $relationName)) {
                 continue;
             }
 
-            $config = $definitions[$relationName];
-            $type = $config['type'] ?? '';
-            $relatedClass = $config['related'];
+            $relation = $instance->$relationName();
 
-            $ids = [];
+            if ($relation instanceof BelongsTo) {
+                $foreignKey = $relation->getForeignKey();
+                $ownerKey = $relation->getOwnerKey();
 
-            if ($type === 'belongsTo') {
-                $foreignKey = $config['foreignKey'] ?? $relationName . '_id';
-                $ownerKey = $config['ownerKey'] ?? 'id';
-
+                $ids = [];
                 foreach ($models as $model) {
                     if (isset($model->$foreignKey)) {
                         $ids[] = $model->$foreignKey;
                     }
                 }
                 $ids = array_unique($ids);
-
                 if (empty($ids)) continue;
 
-                $relatedModels = (new Query())
-                    ->setModel($relatedClass)
-                    ->whereIn($ownerKey, $ids)
-                    ->all();
+
+                $relatedQuery = $relation->getQuery();
+                $relatedModels = $relatedQuery->whereIn($ownerKey, $ids)->all();
+
 
                 $dictionary = [];
                 foreach ($relatedModels as $rel) {
                     $dictionary[$rel->$ownerKey] = $rel;
                 }
+
 
                 foreach ($models as $model) {
                     $fkValue = $model->$foreignKey ?? null;
@@ -320,23 +355,22 @@ class Query
                         $model->setRelation($relationName, $dictionary[$fkValue]);
                     }
                 }
-            } elseif ($type === 'hasMany' || $type === 'hasOne') {
-                $localKey = $config['localKey'] ?? 'id';
-                $foreignKey = $config['foreignKey'];
+            } elseif ($relation instanceof HasMany || $relation instanceof HasOne) {
 
+                $localKey = $relation->getLocalKey();
+                $foreignKey = $relation->getForeignKey();
+
+                $ids = [];
                 foreach ($models as $model) {
                     if (isset($model->$localKey)) {
                         $ids[] = $model->$localKey;
                     }
                 }
                 $ids = array_unique($ids);
-
                 if (empty($ids)) continue;
 
-                $relatedModels = (new Query())
-                    ->setModel($relatedClass)
-                    ->whereIn($foreignKey, $ids)
-                    ->all();
+                $relatedQuery = $relation->getQuery();
+                $relatedModels = $relatedQuery->whereIn($foreignKey, $ids)->all();
 
                 $dictionary = [];
                 foreach ($relatedModels as $rel) {
@@ -347,10 +381,9 @@ class Query
                 foreach ($models as $model) {
                     $pkValue = $model->$localKey ?? null;
                     if ($pkValue && isset($dictionary[$pkValue])) {
-                        $value = ($type === 'hasOne')
+                        $value = ($relation instanceof \AdaiasMagdiel\Rubik\Relation\HasOne)
                             ? $dictionary[$pkValue][0]
                             : $dictionary[$pkValue];
-
                         $model->setRelation($relationName, $value);
                     }
                 }
@@ -363,19 +396,19 @@ class Query
     // ============================================================================
 
     /**
-     * Add a WHERE condition with AND conjunction
+     * Adds a WHERE condition with AND conjunction.
      * 
      * Supports two call signatures:
      * - where('column', 'value')          → column = value
      * - where('column', 'operator', value) → column operator value
      * 
-     * @param string $key Column name (e.g., 'id' or 'users.id')
-     * @param mixed $operatorOrValue Operator or value if operator is omitted
-     * @param mixed $value Value (optional if operator is omitted)
+     * @param string $key Column name (e.g., 'id' or 'users.id').
+     * @param mixed $operatorOrValue Operator or value if operator is omitted.
+     * @param mixed $value Value (optional if operator is omitted).
      * 
      * @return self
      * 
-     * @throws InvalidArgumentException If column name or operator is invalid
+     * @throws InvalidArgumentException If column name or operator is invalid.
      * 
      * @example
      * ```php
@@ -409,15 +442,15 @@ class Query
     }
 
     /**
-     * Add a WHERE condition with OR conjunction
+     * Adds a WHERE condition with OR conjunction.
      * 
-     * @param string $key Column name
-     * @param mixed $operatorOrValue Operator or value
-     * @param mixed $value Value (optional)
+     * @param string $key Column name.
+     * @param mixed $operatorOrValue Operator or value.
+     * @param mixed $value Value (optional).
      * 
      * @return self
      * 
-     * @throws InvalidArgumentException If column name or operator is invalid
+     * @throws InvalidArgumentException If column name or operator is invalid.
      * 
      * @example
      * ```php
@@ -449,14 +482,14 @@ class Query
     }
 
     /**
-     * Add a WHERE IN condition
+     * Adds a WHERE IN condition.
      * 
-     * @param string $key Column name
-     * @param array<int, mixed> $values Array of values to match
+     * @param string $key Column name.
+     * @param array<int, mixed> $values Array of values to match.
      * 
      * @return self
      * 
-     * @throws InvalidArgumentException If values array is empty or column is invalid
+     * @throws InvalidArgumentException If values array is empty or column is invalid.
      * 
      * @example
      * ```php
@@ -476,9 +509,9 @@ class Query
     }
 
     /**
-     * Add a WHERE EXISTS subquery condition
+     * Adds a WHERE EXISTS subquery condition.
      * 
-     * @param Query $subquery The subquery to check existence
+     * @param Query $subquery The subquery to check existence.
      * 
      * @return self
      * 
@@ -512,16 +545,16 @@ class Query
     // ============================================================================
 
     /**
-     * Add an INNER JOIN clause
+     * Adds an INNER JOIN clause.
      * 
-     * @param string $table Table name to join
-     * @param string $left Left side of the join condition (usually qualified: table.column)
-     * @param string $op Join operator (=, <>, <, >, <=, >=)
-     * @param string $right Right side of the join condition
+     * @param string $table Table name to join.
+     * @param string $left Left side of the join condition (usually qualified: table.column).
+     * @param string $op Join operator (=, <>, <, >, <=, >=).
+     * @param string $right Right side of the join condition.
      * 
      * @return self
      * 
-     * @throws InvalidArgumentException If table/column names or operator are invalid
+     * @throws InvalidArgumentException If table/column names or operator are invalid.
      * 
      * @example
      * ```php
@@ -544,16 +577,16 @@ class Query
     }
 
     /**
-     * Add a LEFT JOIN clause
+     * Adds a LEFT JOIN clause.
      * 
-     * @param string $table Table name to join
-     * @param string $left Left side of the join condition
-     * @param string $op Join operator
-     * @param string $right Right side of the join condition
+     * @param string $table Table name to join.
+     * @param string $left Left side of the join condition.
+     * @param string $op Join operator.
+     * @param string $right Right side of the join condition.
      * 
      * @return self
      * 
-     * @throws InvalidArgumentException If table/column names or operator are invalid
+     * @throws InvalidArgumentException If table/column names or operator are invalid.
      */
     public function leftJoin(string $table, string $left, string $op, string $right): self
     {
@@ -570,16 +603,16 @@ class Query
     }
 
     /**
-     * Add a RIGHT JOIN clause
+     * Adds a RIGHT JOIN clause.
      * 
-     * @param string $table Table name to join
-     * @param string $left Left side of the join condition
-     * @param string $op Join operator
-     * @param string $right Right side of the join condition
+     * @param string $table Table name to join.
+     * @param string $left Left side of the join condition.
+     * @param string $op Join operator.
+     * @param string $right Right side of the join condition.
      * 
      * @return self
      * 
-     * @throws InvalidArgumentException If table/column names or operator are invalid
+     * @throws InvalidArgumentException If table/column names or operator are invalid.
      */
     public function rightJoin(string $table, string $left, string $op, string $right): self
     {
@@ -600,14 +633,14 @@ class Query
     // ============================================================================
 
     /**
-     * Add an ORDER BY clause
+     * Adds an ORDER BY clause.
      * 
-     * @param string $column Column name to order by
-     * @param string $direction Sort direction: 'ASC' or 'DESC' (default: 'ASC')
+     * @param string $column Column name to order by.
+     * @param string $direction Sort direction: 'ASC' or 'DESC' (default: 'ASC').
      * 
      * @return self
      * 
-     * @throws InvalidArgumentException If column name is invalid
+     * @throws InvalidArgumentException If column name is invalid.
      * 
      * @example
      * ```php
@@ -624,13 +657,13 @@ class Query
     }
 
     /**
-     * Add a GROUP BY clause
+     * Adds a GROUP BY clause.
      * 
-     * @param string $column Column name to group by
+     * @param string $column Column name to group by.
      * 
      * @return self
      * 
-     * @throws InvalidArgumentException If column name is invalid
+     * @throws InvalidArgumentException If column name is invalid.
      * 
      * @example
      * ```php
@@ -647,16 +680,16 @@ class Query
     }
 
     /**
-     * Add a HAVING clause
+     * Adds a HAVING clause.
      * 
      * Note: HAVING conditions are validated for dangerous characters but
      * not fully sanitized due to their complex nature. Use with caution.
      * 
-     * @param string $condition The HAVING condition
+     * @param string $condition The HAVING condition.
      * 
      * @return self
      * 
-     * @throws InvalidArgumentException If condition contains dangerous characters
+     * @throws InvalidArgumentException If condition contains dangerous characters.
      * 
      * @example
      * ```php
@@ -681,13 +714,13 @@ class Query
     // ============================================================================
 
     /**
-     * Set the LIMIT clause
+     * Sets the LIMIT clause.
      * 
-     * @param int $limit Maximum number of rows to return
+     * @param int $limit Maximum number of rows to return.
      * 
      * @return self
      * 
-     * @throws InvalidArgumentException If limit is negative
+     * @throws InvalidArgumentException If limit is negative.
      * 
      * @example
      * ```php
@@ -705,13 +738,13 @@ class Query
     }
 
     /**
-     * Set the OFFSET clause
+     * Sets the OFFSET clause.
      * 
-     * @param int $offset Number of rows to skip
+     * @param int $offset Number of rows to skip.
      * 
      * @return self
      * 
-     * @throws InvalidArgumentException If offset is negative
+     * @throws InvalidArgumentException If offset is negative.
      * 
      * @example
      * ```php
@@ -733,13 +766,13 @@ class Query
     // ============================================================================
 
     /**
-     * Execute a DELETE query
+     * Executes a DELETE query.
      * 
      * WARNING: Without WHERE conditions, this will delete ALL rows!
      * 
-     * @return bool True if at least one row was deleted
+     * @return bool True if at least one row was deleted.
      * 
-     * @throws RuntimeException If query preparation or execution fails
+     * @throws RuntimeException If query preparation or execution fails.
      * 
      * @example
      * ```php
@@ -768,16 +801,16 @@ class Query
     }
 
     /**
-     * Execute an UPDATE query
+     * Executes an UPDATE query.
      * 
      * WARNING: Without WHERE conditions, this will update ALL rows!
      * 
-     * @param array<string, mixed> $data Associative array of column => value pairs
+     * @param array<string, mixed> $data Associative array of column => value pairs.
      * 
-     * @return bool True if at least one row was updated, false if data is empty
+     * @return bool True if at least one row was updated, false if data is empty.
      * 
-     * @throws InvalidArgumentException If data contains invalid column names
-     * @throws RuntimeException If query preparation or execution fails
+     * @throws InvalidArgumentException If data contains invalid column names.
+     * @throws RuntimeException If query preparation or execution fails.
      * 
      * @example
      * ```php
@@ -825,7 +858,7 @@ class Query
     }
 
     /**
-     * Execute an INSERT query
+     * Executes an INSERT query.
      * 
      * Supports both single and batch inserts.
      * 
@@ -833,14 +866,10 @@ class Query
      *        Single row: ['column' => 'value', ...]
      *        Multiple rows: [['column' => 'value'], ['column' => 'value']]
      * 
-     * @return array<int, mixed> Array of inserted IDs
-     *         - PostgreSQL/MySQL 8.0.22+: Always returns all IDs via RETURNING
-     *         - MySQL/SQLite with manual IDs: Returns the provided IDs
-     *         - MySQL/SQLite with AUTO_INCREMENT (single row): Returns [lastInsertId]
-     *         - MySQL/SQLite with AUTO_INCREMENT (batch): Returns [] (limitation)
+     * @return array<int, mixed> The list of inserted primary keys (if available/supported by driver).
      * 
-     * @throws InvalidArgumentException If data is empty or contains invalid column names
-     * @throws RuntimeException If query preparation or execution fails
+     * @throws InvalidArgumentException If data is empty or contains invalid column names.
+     * @throws RuntimeException If query preparation or execution fails.
      * 
      * @example
      * ```php
@@ -907,10 +936,10 @@ class Query
     // ============================================================================
 
     /**
-     * Execute query and return paginated results
+     * Executes query and returns paginated results.
      * 
-     * @param int $page Page number (1-indexed)
-     * @param int $perPage Number of items per page
+     * @param int $page Page number (1-indexed).
+     * @param int $perPage Number of items per page.
      * 
      * @return array{
      *     data: array<int, object>,
@@ -920,7 +949,7 @@ class Query
      *     last_page: int
      * }
      * 
-     * @throws InvalidArgumentException If page or perPage is less than 1
+     * @throws InvalidArgumentException If page or perPage is less than 1.
      * 
      * @example
      * ```php
@@ -952,14 +981,14 @@ class Query
     }
 
     /**
-     * Count total rows matching the query (ignoring LIMIT/OFFSET)
+     * Counts total rows matching the query (ignoring LIMIT/OFFSET).
      * 
      * This method temporarily modifies the query state but restores it
      * even if an exception occurs.
      * 
-     * @return int Total number of matching rows
+     * @return int Total number of matching rows.
      * 
-     * @throws RuntimeException If query execution fails
+     * @throws RuntimeException If query execution fails.
      * 
      * @example
      * ```php
@@ -991,14 +1020,14 @@ class Query
     }
 
     /**
-     * Execute query and return all matching rows
+     * Executes query and returns all matching rows.
      * 
      * WARNING: For large result sets, consider using cursor() or chunk()
      * to avoid memory issues.
      * 
-     * @return array<int, object> Array of model instances or stdClass objects
+     * @return array<int, object> Array of model instances or stdClass objects.
      * 
-     * @throws RuntimeException If query execution fails
+     * @throws RuntimeException If query execution fails.
      * 
      * @example
      * ```php
@@ -1016,13 +1045,13 @@ class Query
     }
 
     /**
-     * Execute query and return the first matching row
+     * Executes query and returns the first matching row.
      * 
      * Automatically adds LIMIT 1 to the query.
      * 
-     * @return object|null Model instance/stdClass or null if no rows found
+     * @return object|null Model instance/stdClass or null if no rows found.
      * 
-     * @throws RuntimeException If query execution fails
+     * @throws RuntimeException If query execution fails.
      * 
      * @example
      * ```php
@@ -1041,13 +1070,13 @@ class Query
     }
 
     /**
-     * Execute query without fetching results
+     * Executes query without fetching results.
      * 
      * Useful for checking if any rows match without loading data.
      * 
-     * @return bool True if at least one row matches
+     * @return bool True if at least one row matches.
      * 
-     * @throws RuntimeException If query execution fails
+     * @throws RuntimeException If query execution fails.
      * 
      * @example
      * ```php
@@ -1076,14 +1105,14 @@ class Query
     }
 
     /**
-     * Iterate over results using a memory-efficient generator
+     * Iterates over results using a memory-efficient generator.
      * 
      * This method uses lazy loading to fetch one row at a time,
      * making it ideal for processing large datasets.
      * 
-     * @return Generator<int, object> Generator yielding model instances
+     * @return Generator<int, object> Generator yielding model instances.
      * 
-     * @throws RuntimeException If query execution fails
+     * @throws RuntimeException If query execution fails.
      * 
      * @example
      * ```php
@@ -1102,18 +1131,18 @@ class Query
     }
 
     /**
-     * Process results in chunks to manage memory usage
+     * Processes results in chunks to manage memory usage.
      * 
      * Executes the callback for each chunk of results. Useful for
      * processing large datasets without loading everything into memory.
      * 
-     * @param int $size Number of rows per chunk
-     * @param callable $callback Function to call for each chunk
-     *                           Receives array of models as parameter
+     * @param int $size Number of rows per chunk.
+     * @param callable $callback Function to call for each chunk.
+     *                           Receives array of models as parameter.
      * 
      * @return void
      * 
-     * @throws InvalidArgumentException If chunk size is less than 1
+     * @throws InvalidArgumentException If chunk size is less than 1.
      * 
      * @example
      * ```php
@@ -1145,13 +1174,13 @@ class Query
     // ============================================================================
 
     /**
-     * Get the generated SQL query string
+     * Gets the generated SQL query string.
      * 
      * Note: Placeholders are not interpolated. Use getBindings() to see values.
      * 
-     * @return string The complete SQL query with placeholders
+     * @return string The complete SQL query with placeholders.
      * 
-     * @throws RuntimeException If table is not set or operation is UPDATE
+     * @throws RuntimeException If table is not set or operation is UPDATE.
      * 
      * @example
      * ```php
@@ -1196,9 +1225,9 @@ class Query
     }
 
     /**
-     * Get all parameter bindings for the current query
+     * Gets all parameter bindings for the current query.
      * 
-     * @return array<string, mixed> Associative array of placeholder => value
+     * @return array<string, mixed> Associative array of placeholder => value.
      * 
      * @example
      * ```php
@@ -1213,7 +1242,7 @@ class Query
     }
 
     /**
-     * Get the query execution log
+     * Gets the query execution log.
      * 
      * Contains all queries executed with their SQL, bindings, and execution time.
      * Useful for debugging and performance monitoring.
@@ -1238,18 +1267,18 @@ class Query
     // ============================================================================
 
     /**
-     * Execute the query and return the PDOStatement
+     * Executes the query and returns the PDOStatement.
      * 
      * This is the central method that:
-     * 1. Builds the SQL
-     * 2. Prepares the statement
-     * 3. Executes with bindings
-     * 4. Logs the query
-     * 5. Handles errors
+     * 1. Builds the SQL.
+     * 2. Prepares the statement.
+     * 3. Executes with bindings.
+     * 4. Logs the query.
+     * 5. Handles errors.
      * 
      * @return PDOStatement
      * 
-     * @throws RuntimeException If preparation or execution fails
+     * @throws RuntimeException If preparation or execution fails.
      */
     private function executeStatement(): PDOStatement
     {
@@ -1284,9 +1313,9 @@ class Query
     }
 
     /**
-     * Build the JOIN clauses
+     * Builds the JOIN clauses.
      * 
-     * @return string JOIN clauses or empty string
+     * @return string JOIN clauses or empty string.
      */
     private function buildJoinsClause(): string
     {
@@ -1294,9 +1323,9 @@ class Query
     }
 
     /**
-     * Build the WHERE clause
+     * Builds the WHERE clause.
      * 
-     * @return string WHERE clause or empty string
+     * @return string WHERE clause or empty string.
      */
     private function buildWhereClause(): string
     {
@@ -1304,9 +1333,9 @@ class Query
     }
 
     /**
-     * Build the GROUP BY clause
+     * Builds the GROUP BY clause.
      * 
-     * @return string GROUP BY clause or empty string
+     * @return string GROUP BY clause or empty string.
      */
     private function buildGroupByClause(): string
     {
@@ -1314,9 +1343,9 @@ class Query
     }
 
     /**
-     * Build the HAVING clause
+     * Builds the HAVING clause.
      * 
-     * @return string HAVING clause or empty string
+     * @return string HAVING clause or empty string.
      */
     private function buildHavingClause(): string
     {
@@ -1324,9 +1353,9 @@ class Query
     }
 
     /**
-     * Build the ORDER BY clause
+     * Builds the ORDER BY clause.
      * 
-     * @return string ORDER BY clause or empty string
+     * @return string ORDER BY clause or empty string.
      */
     private function buildOrderByClause(): string
     {
@@ -1334,9 +1363,9 @@ class Query
     }
 
     /**
-     * Build the LIMIT clause
+     * Builds the LIMIT clause.
      * 
-     * @return string LIMIT clause or empty string
+     * @return string LIMIT clause or empty string.
      */
     private function buildLimitClause(): string
     {
@@ -1344,9 +1373,9 @@ class Query
     }
 
     /**
-     * Build the OFFSET clause
+     * Builds the OFFSET clause.
      * 
-     * @return string OFFSET clause or empty string
+     * @return string OFFSET clause or empty string.
      */
     private function buildOffsetClause(): string
     {
@@ -1358,7 +1387,7 @@ class Query
     // ============================================================================
 
     /**
-     * Add a condition to the WHERE clause
+     * Adds a condition to the WHERE clause.
      * 
      * This is the core method that handles all WHERE conditions:
      * - Standard comparisons (=, <, >, etc.)
@@ -1366,14 +1395,14 @@ class Query
      * - IN clauses
      * - SQL::raw() expressions
      * 
-     * @param string $key Column name (must be sanitized before calling)
-     * @param mixed $value Value to compare
-     * @param string $op Comparison operator
-     * @param string $conjunction AND or OR
+     * @param string $key Column name (must be sanitized before calling).
+     * @param mixed $value Value to compare.
+     * @param string $op Comparison operator.
+     * @param string $conjunction AND or OR.
      * 
      * @return void
      * 
-     * @throws InvalidArgumentException If operator is invalid
+     * @throws InvalidArgumentException If operator is invalid.
      */
     private function addCondition(string $key, mixed $value, string $op, string $conjunction): void
     {
@@ -1437,26 +1466,26 @@ class Query
     // ============================================================================
 
     /**
-     * Resolve inserted IDs after an INSERT operation
+     * Resolves inserted IDs after an INSERT operation.
      * 
      * This method handles multiple scenarios:
      * 
      * 1. PostgreSQL / MySQL 8.0.22+ with RETURNING clause
-     *    → Fetches IDs directly from statement
+     *    → Fetches IDs directly from statement.
      * 
      * 2. Manual IDs (UUIDs, ULIDs, etc.)
-     *    → Returns IDs from the input data
+     *    → Returns IDs from the input data.
      * 
      * 3. AUTO_INCREMENT (MySQL, SQLite) - single insert
-     *    → Uses PDO::lastInsertId()
+     *    → Uses PDO::lastInsertId().
      * 
      * 4. AUTO_INCREMENT - batch insert (MySQL < 8.0.22, SQLite)
-     *    → Returns empty array (known limitation)
+     *    → Returns empty array (known limitation).
      * 
-     * @param PDOStatement $stmt Executed INSERT statement
-     * @param array<int, array<string, mixed>> $rows Inserted rows
+     * @param PDOStatement $stmt Executed INSERT statement.
+     * @param array<int, array<string, mixed>> $rows Inserted rows.
      * 
-     * @return array<int, mixed> Array of inserted IDs
+     * @return array<int, mixed> Array of inserted IDs.
      */
     private function resolveInsertedIds(PDOStatement $stmt, array $rows): array
     {
@@ -1508,11 +1537,11 @@ class Query
     // ============================================================================
 
     /**
-     * Hydrate multiple result rows into model instances
+     * Hydrates multiple result rows into model instances.
      * 
-     * @param array<int, array<string, mixed>> $results Raw database rows
+     * @param array<int, array<string, mixed>> $results Raw database rows.
      * 
-     * @return array<int, object> Array of hydrated models or stdClass objects
+     * @return array<int, object> Array of hydrated models or stdClass objects.
      */
     private function hydrateModels(array $results): array
     {
@@ -1530,14 +1559,15 @@ class Query
     }
 
     /**
-     * Hydrate a single result row into a model instance
+     * Hydrates a single result row into a model instance.
      * 
-     * If a model class is set, creates an instance and populates its properties.
+     * If a model class is set, creates an instance, populates its properties,
+     * and sets the 'exists' flag to true.
      * Otherwise, returns a stdClass object.
      * 
-     * @param array<string, mixed> $data Raw database row
+     * @param array<string, mixed> $data Raw database row.
      * 
-     * @return object Model instance or stdClass
+     * @return object Model instance or stdClass.
      */
     private function hydrateModel(array $data): object
     {
@@ -1551,17 +1581,14 @@ class Query
             $model->exists = true;
         }
 
-        // Use magic __set if available, otherwise set properties directly
-        if (method_exists($model, '__set')) {
-            foreach ($data as $key => $value) {
-                $model->__set($key, $value);
-            }
+        if (method_exists($model, 'hydrate')) {
+            $model->hydrate($data);
         } else {
+            // Fallback caso alguém sobrescreva algo errado (opcional)
             foreach ($data as $key => $value) {
-                if (property_exists($model, $key)) {
-                    $model->$key = $value;
-                }
+                $model->{$key} = $value;
             }
+            $model->exists = true;
         }
 
         return $model;
@@ -1572,15 +1599,13 @@ class Query
     // ============================================================================
 
     /**
-     * Sanitize a simple identifier (table name, column name)
+     * Quotes and sanitizes a simple identifier (table name, column name).
      * 
-     * Allows only: letters, numbers, underscores
+     * @param string $identifier Identifier to sanitize.
      * 
-     * @param string $identifier Identifier to sanitize
+     * @return string Quoted identifier.
      * 
-     * @return string Sanitized identifier
-     * 
-     * @throws InvalidArgumentException If identifier contains invalid characters
+     * @throws InvalidArgumentException If identifier contains invalid characters.
      */
     private function sanitizeIdentifier(string $identifier): string
     {
@@ -1588,15 +1613,15 @@ class Query
     }
 
     /**
-     * Sanitize a column reference (can include table.column format)
+     * Quotes and sanitizes a column reference.
      * 
-     * Allows: table.column or column
+     * Allows format: table.column or column.
      * 
-     * @param string $column Column reference to sanitize
+     * @param string $column Column reference to sanitize.
      * 
-     * @return string Sanitized column reference
+     * @return string Quoted column reference.
      * 
-     * @throws InvalidArgumentException If column reference contains invalid characters
+     * @throws InvalidArgumentException If column reference contains invalid characters.
      */
     private function sanitizeColumnReference(string $column): string
     {
@@ -1610,27 +1635,31 @@ class Query
     }
 
     /**
-     * Check if a string is a SQL expression (function call, aggregate, etc.)
+     * Magic method to handle Query Scopes.
      * 
-     * This allows common SQL expressions in SELECT clauses while still
-     * maintaining security by rejecting dangerous patterns.
+     * Allows calling model scopes defined as "scopeName($query)".
+     * Example: User::scopeActive($query) is called via $query->active().
      * 
-     * @param string $expression The expression to check
+     * @param string $method The scope name being called.
+     * @param array $args Arguments to pass to the scope.
      * 
-     * @return bool True if it's a SQL expression, false otherwise
+     * @return self
+     * 
+     * @throws BadMethodCallException If the scope method does not exist on the model.
      */
-    private function isSqlExpression(string $expression): bool
+    public function __call(string $method, array $args): self
     {
-        // Reject obviously dangerous patterns
-        if (preg_match('/[;\'"\\\\]|--|\bDROP\b|\bDELETE\b|\bUPDATE\b|\bINSERT\b/i', $expression)) {
-            return false;
+        $scope = 'scope' . ucfirst($method);
+
+        if (method_exists($this->model, $scope)) {
+            array_unshift($args, $this);
+            call_user_func_array([$this->model, $scope], $args);
+
+            return $this;
         }
 
-        // Allow common SQL functions and expressions
-        // Examples: COUNT(*), MAX(age), LENGTH(name), CONCAT(first, last), etc.
-        // Also allow numeric constants like '1'
-        return preg_match('/^[A-Z_]+\([^)]*\)$/i', $expression) ||
-            preg_match('/^\*$/', $expression) ||
-            preg_match('/^\d+$/', $expression); // Adiciona suporte para constantes numéricas
+        throw new BadMethodCallException(
+            sprintf('Call to undefined method %s::%s()', static::class, $method)
+        );
     }
 }
