@@ -7,30 +7,33 @@ use AdaiasMagdiel\Rubik\Rubik;
 use AdaiasMagdiel\Rubik\Enum\Field;
 use AdaiasMagdiel\Rubik\SQL;
 use InvalidArgumentException;
-use RuntimeException;
+use LogicException;
 
 trait SchemaTrait
 {
     /**
-     * Defines the field schema for the model's table.
+     * Defines the database schema for the model's table.
      *
-     * Must be implemented by subclasses to specify the table's columns and their properties.
+     * This method must be implemented by subclasses to specify the table's
+     * columns and their properties (type, length, constraints, etc.).
      *
-     * @return array Associative array of field names and their properties.
-     * @throws RuntimeException If not implemented in the subclass.
+     * @return array An associative array of field names and their configuration.
+     * @throws LogicException If the method is not implemented in the subclass.
      */
     protected static function fields(): array
     {
-        throw new RuntimeException(
+        throw new LogicException(
             sprintf('Method fields() must be implemented in %s', static::class)
         );
     }
 
     /**
-     * Returns the primary key column name for the model.
+     * Retrieves the primary key column name for the model.
      *
-     * @return string The primary key column name.
-     * @throws RuntimeException If no primary key is defined.
+     * Iterates through the defined fields to find the one marked as the primary key.
+     *
+     * @return string The name of the primary key column.
+     * @throws LogicException If no primary key is defined in the schema.
      */
     public static function primaryKey(): string
     {
@@ -40,15 +43,16 @@ trait SchemaTrait
                 return $key;
             }
         }
-        throw new RuntimeException('No primary key defined for model.');
+        throw new LogicException('No primary key defined for model.');
     }
 
     /**
-     * Returns the table name for the model.
+     * Retrieves the database table name associated with the model.
      *
-     * Uses the explicitly defined $table property, or derives it from the class name.
+     * If the `$table` property is explicitly defined, it is returned.
+     * Otherwise, the table name is inferred from the class name (snake_case + pluralized).
      *
-     * @return string The table name.
+     * @return string The database table name.
      */
     public static function getTableName(): string
     {
@@ -61,10 +65,13 @@ trait SchemaTrait
     }
 
     /**
-     * Creates the model's table in the database based on the defined fields.
+     * Creates the database table based on the model's schema definition.
      *
-     * @param bool $ifNotExists If true, adds IF NOT EXISTS to prevent errors if the table already exists (default: false).
-     * @return bool True if the table was created successfully, false otherwise.
+     * Generates and executes the SQL CREATE TABLE statement, including columns
+     * and foreign key constraints.
+     *
+     * @param bool $ifNotExists If true, adds the 'IF NOT EXISTS' clause to the statement.
+     * @return bool True on success, false on failure.
      */
     public static function createTable(bool $ifNotExists = false): bool
     {
@@ -105,9 +112,12 @@ trait SchemaTrait
     }
 
     /**
-     * Truncates the model's table (removes all records but keeps the table structure).
+     * Truncates the model's table, removing all records while preserving the structure.
      * 
-     * @return bool True if successful, false otherwise.
+     * For SQLite, this executes a 'DELETE FROM' statement as TRUNCATE is not supported.
+     * For other drivers, it executes 'TRUNCATE TABLE'.
+     * 
+     * @return bool True on success, false on failure.
      */
     public static function truncateTable(): bool
     {
@@ -126,10 +136,10 @@ trait SchemaTrait
     }
 
     /**
-     * Drops the model's table (completely removes the table and its data).
+     * Drops the database table, removing both the structure and the data.
      * 
-     * @param bool $ifExists If true, adds IF EXISTS to prevent errors (default: false).
-     * @return bool True if successful, false otherwise.
+     * @param bool $ifExists If true, adds the 'IF EXISTS' clause to prevent errors if the table is missing.
+     * @return bool True on success, false on failure.
      */
     public static function dropTable(bool $ifExists = false): bool
     {
@@ -148,11 +158,14 @@ trait SchemaTrait
     }
 
     /**
-     * Generates the SQL field definition string for a field.
+     * Generates the SQL column definition string based on field configuration and active driver.
      *
-     * @param array $field The field properties (type, primary_key, autoincrement, etc.).
-     * @return string The SQL field definition.
-     * @throws InvalidArgumentException If the field configuration is invalid.
+     * Handles type mapping between generic Rubik types and driver-specific SQL types
+     * (e.g., mapping VARCHAR to TEXT in SQLite).
+     *
+     * @param array $field The field configuration properties.
+     * @return string The SQL column definition string.
+     * @throws InvalidArgumentException If the field type is missing or invalid.
      */
     protected static function getFieldString(array $field): string
     {
@@ -224,10 +237,10 @@ trait SchemaTrait
 
 
     /**
-     * Escapes a default value for use in SQL field definitions.
+     * Escapes a default value for safe inclusion in DDL statements.
      *
      * @param mixed $value The default value to escape.
-     * @return string The escaped default value.
+     * @return string The escaped default value string.
      */
     protected static function escapeDefaultValue(mixed $value): string
     {
@@ -242,7 +255,7 @@ trait SchemaTrait
     }
 
     /**
-     * Checks if a field exists in the model's schema.
+     * Checks if a specific field exists in the model's schema definition.
      *
      * @param string $key The field name to check.
      * @return bool True if the field exists, false otherwise.
