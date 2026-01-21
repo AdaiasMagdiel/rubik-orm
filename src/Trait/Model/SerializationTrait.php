@@ -5,9 +5,9 @@ namespace AdaiasMagdiel\Rubik\Trait\Model;
 trait SerializationTrait
 {
     /**
-     * Defines how the model will be serialized into JSON.
+     * Converts the model instance attributes into a plain PHP array.
      *
-     * @return array The data to be serialized into JSON.
+     * @return array An associative array containing the model's data.
      */
     public function toArray(): array
     {
@@ -15,9 +15,11 @@ trait SerializationTrait
     }
 
     /**
-     * Defines how the model will be serialized into JSON.
+     * Specifies data which should be serialized to JSON.
+     * 
+     * This method is called automatically when the model is passed to json_encode().
      *
-     * @return array The data to be serialized into JSON.
+     * @return array The data to be serialized.
      */
     public function jsonSerialize(): array
     {
