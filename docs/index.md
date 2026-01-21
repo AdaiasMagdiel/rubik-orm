@@ -1,108 +1,54 @@
 # Rubik ORM
 
-> **Rubik ORM** is a lightweight, driver-aware Object–Relational Mapper for PHP that seamlessly adapts to **SQLite** and **MySQL/MariaDB** environments — providing a fluent, expressive, and safe abstraction for database modeling, querying, and schema management.
+**Rubik** is a strict, type-safe, and driver-agnostic Object-Relational Mapper (ORM) for PHP 8.1+. It implements the **Active Record** pattern but distinctively separates schema definition (`SchemaTrait`), query construction (`Query`), and persistence (`CrudTrait`).
 
----
+## Architectural Philosophy
 
-## 🚀 Overview
+Rubik was built to solve specific problems found in heavier ORMs:
 
-Rubik ORM brings the power of modern ORMs to a **compact and dependency-free** package.  
-It is designed to be fast, predictable, and driver-aware — automatically adapting SQL syntax and behavior depending on the active database driver.
+1.  **Code-First Truth:** The database schema is defined _inside_ the Model via the `fields()` method. There are no separate migration files that can drift out of sync with your classes.
+2.  **Strict Validation:** The schema builder (`Column` class) validates types, lengths, and defaults _before_ generating SQL.
+3.  **Driver Abstraction:** You define a column as `Column::Boolean()`. Rubik decides if that becomes `TINYINT(1)` (MySQL) or `INTEGER` (SQLite) at runtime.
+4.  **Zero-Dependency:** It relies solely on `ext-pdo`.
 
-### ✨ Key Features
+## The Core Components
 
-- **Driver-aware design** — supports both **SQLite** and **MySQL/MariaDB**, automatically adjusting types and syntax.
-- **Lightweight and dependency-free** — built with native **PDO** under the hood.
-- **Schema builder** — programmatically define and create database schemas in PHP.
-- **Query builder** — build expressive SQL queries fluently with chainable methods.
-- **Model abstraction** — define models that map directly to database tables.
-- **Relationships** — define `belongsTo`, `hasOne`, `hasMany`, and `belongsToMany` associations.
-- **Type-safe columns** — via `Column` definitions and extensive validation.
-- **Raw SQL support** — safely inject raw SQL fragments using `SQL::raw()`.
-- **Portable** — works seamlessly across CLI scripts, REST APIs, and traditional web apps.
-- **Test-friendly** — designed to work easily with in-memory SQLite databases.
+| Component      | Responsibility                                                                       |
+| :------------- | :----------------------------------------------------------------------------------- |
+| **`Rubik`**    | The singleton connection manager. Handles `PDO` instantiation and transaction state. |
+| **`Model`**    | The entry point. Uses traits to compose capabilities (CRUD, Schema, Querying).       |
+| **`Query`**    | A fluent SQL builder. Handles sanitization, parameter binding, and hydration.        |
+| **`Column`**   | A meta-programming factory. Validates and normalizes field definitions.              |
+| **`Relation`** | Abstract logic for connecting models (HasOne, BelongsTo, etc.).                      |
 
----
+## Requirement Checklist
 
-## 🧩 Example
+- **PHP:** 8.1 or higher.
+- **Extensions:** `ext-pdo`, plus `ext-pdo_sqlite` or `ext-pdo_mysql`.
+- **Database:**
+  - MySQL 5.7+ or MariaDB 10.2+
+  - SQLite 3.25+ (Required for proper Foreign Key support)
 
-Here's a minimal example of Rubik ORM in action:
+## Basic Usage Teaser
 
 ```php
-<?php
+use App\Models\User;
 
-use AdaiasMagdiel\Rubik\Rubik;
-use AdaiasMagdiel\Rubik\Enum\Driver;
-use AdaiasMagdiel\Rubik\Model;
-use AdaiasMagdiel\Rubik\Column;
-use AdaiasMagdiel\Rubik\SQL;
-
-// 1. Connect to an in-memory SQLite database
-Rubik::connect(Driver::SQLITE, path: ':memory:');
-
-// 2. Define a model
+// 1. Definition
 class User extends Model {
-    protected static string $table = 'users';
-
     protected static function fields(): array {
         return [
-            'id' => Column::Integer(primaryKey: true, autoincrement: true),
-            'name' => Column::Varchar(length: 100, notNull: true),
-            'email' => Column::Varchar(length: 150, notNull: true, unique: true),
-            'created_at' => Column::Datetime(default: SQL::raw('CURRENT_TIMESTAMP')),
+            'id'   => Column::Integer(primaryKey: true, autoIncrement: true),
+            'name' => Column::Varchar(length: 100, notNull: true)
         ];
     }
 }
 
-// 3. Create the table
-User::createTable();
+// 2. Synchronization
+User::createTable(ifNotExists: true);
 
-// 4. Create and save a user
+// 3. Interaction
 $user = new User();
-$user->name = 'Adaías Magdiel';
-$user->email = 'adaias@example.com';
+$user->name = "Adaías";
 $user->save();
-
-// 5. Fetch the user
-$found = User::find(1);
-echo $found->name; // Adaías Magdiel
 ```
-
----
-
-## 📦 Requirements
-
-- **PHP** 8.1 or higher
-- **PDO** extension enabled
-- Compatible with **SQLite 3** and **MySQL/MariaDB**
-
----
-
-## 🧰 Installation
-
-Install via [Composer](https://getcomposer.org/):
-
-```bash
-composer require adaiasmagdiel/rubik-orm
-```
-
----
-
-## 🧭 Documentation Structure
-
-| Section                               | Description                                          |
-| ------------------------------------- | ---------------------------------------------------- |
-| [Getting Started](getting-started.md) | Install Rubik and connect to your first database     |
-| [Configuration](configuration.md)     | Driver setup, environment configuration, and options |
-| [Models](models.md)                   | Define models and manage data records                |
-| [Query Builder](queries.md)           | Build fluent SQL queries                             |
-| [Relationships](relationships.md)     | Define associations between models                   |
-| [SQL Raw Expressions](sql-raw.md)     | Use `SQL::raw()` safely                              |
-| [API Reference](reference/model.md)   | Complete API documentation                           |
-
----
-
-## ⚖️ License
-
-Rubik ORM is open-source software licensed under the **GPLv3** License.
-See the [LICENSE](https://github.com/adaiasmagdiel/rubik-orm/blob/main/LICENSE) file for details.

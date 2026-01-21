@@ -1,34 +1,38 @@
 # Getting Started
 
-Welcome to **Rubik ORM** — a fast, lightweight, and driver-aware ORM for PHP.  
-This guide will walk you through installation, configuration, and your first working model.
+## Installation
 
----
-
-## 🧰 Installation
-
-You can install Rubik ORM using **Composer**:
+Rubik is installed via Composer.
 
 ```bash
-composer require adaiasmagdiel/rubik-orm
+composer require adaiasmagdiel/rubik
 ```
 
-Ensure that you have:
+## Connection Management
 
-- **PHP ≥ 8.1**
-- The **PDO** extension enabled
-- One of the supported database drivers:
+Rubik uses a **Singleton** pattern for database connections. This means your application currently supports **one active database connection** at a time.
 
-  - `pdo_sqlite`
-  - `pdo_mysql`
+### The `Rubik::connect` Method
 
----
+You must call `connect` before your application attempts any database operations.
 
-## ⚙️ Connecting to a Database
+```php
+public static function connect(
+    Driver $driver,
+    string $username = '',
+    string $password = '',
+    string $database = '',
+    int $port = 3306,
+    string $host = 'localhost',
+    string $charset = 'utf8mb4',
+    string $path = ":memory:",
+    array $options = []
+): void
+```
 
-Before interacting with models, Rubik must be connected to a database using the static `Rubik::connect()` method.
+### Driver: SQLite
 
-### Example: SQLite (Recommended for Testing)
+For SQLite, the `path` argument is critical. Rubik automatically executes `PRAGMA foreign_keys = ON;` for SQLite connections to ensure referential integrity.
 
 ```php
 use AdaiasMagdiel\Rubik\Rubik;
@@ -36,11 +40,16 @@ use AdaiasMagdiel\Rubik\Enum\Driver;
 
 Rubik::connect(
     driver: Driver::SQLITE,
-    path: ':memory:' // or '/path/to/database.sqlite'
+    path: __DIR__ . '/database.sqlite', // or ":memory:"
+    options: [
+        PDO::ATTR_TIMEOUT => 5 // Optional PDO settings
+    ]
 );
 ```
 
-### Example: MySQL / MariaDB
+### Driver: MySQL / MariaDB
+
+Rubik handles connection strings automatically.
 
 ```php
 use AdaiasMagdiel\Rubik\Rubik;
@@ -48,183 +57,33 @@ use AdaiasMagdiel\Rubik\Enum\Driver;
 
 Rubik::connect(
     driver: Driver::MYSQL,
-    username: 'root',
-    password: 'secret',
-    database: 'rubik_demo',
     host: '127.0.0.1',
-    port: 3306
+    port: 3306,
+    database: 'production_db',
+    username: 'admin',
+    password: 'secure_password',
+    charset: 'utf8mb4'
 );
 ```
 
-Rubik automatically adapts column types and SQL syntax depending on the active driver.
+!!! warning "Strict Mode"
+Rubik sets `PDO::ATTR_ERRMODE` to `PDO::ERRMODE_EXCEPTION` by default. Any SQL error will throw a `PDOException`. It also sets `ATTR_EMULATE_PREPARES` to `false` for security.
 
----
+## Disconnecting
 
-## 🧱 Creating a Model
-
-Models represent database tables.
-Each model must extend the `Rubik\Model` class and define two methods:
-
-- `protected static string $table` — the table name
-- `protected static function fields(): array` — the column schema
-
-Example:
+If you need to close the connection or switch databases during testing:
 
 ```php
-use AdaiasMagdiel\Rubik\Model;
-use AdaiasMagdiel\Rubik\Column;
-use AdaiasMagdiel\Rubik\SQL;
+Rubik::disconnect();
+```
 
-class User extends Model
-{
-    protected static string $table = 'users';
+## Global State Helper
 
-    protected static function fields(): array
-    {
-        return [
-            'id' => Column::Integer(primaryKey: true, autoincrement: true),
-            'name' => Column::Varchar(length: 100, notNull: true),
-            'email' => Column::Varchar(length: 150, notNull: true, unique: true),
-            'created_at' => Column::Datetime(default: SQL::raw('CURRENT_TIMESTAMP')),
-        ];
-    }
+You can check if a connection is active or access the raw PDO instance if you need to perform operations outside the ORM.
+
+```php
+if (Rubik::isConnected()) {
+    $pdo = Rubik::getConn();
+    // Do raw PDO stuff...
 }
 ```
-
----
-
-## 🏗️ Creating Tables
-
-Once your model is defined, you can generate its corresponding table:
-
-```php
-User::createTable(ifNotExists: true);
-```
-
-To reset or remove it:
-
-```php
-User::truncateTable(); // removes all rows
-User::dropTable(ifExists: true); // drops the table
-```
-
----
-
-## 💾 Inserting Records
-
-Rubik models work like simple data containers:
-
-```php
-$user = new User();
-$user->name = 'Adaías Magdiel';
-$user->email = 'adaias@example.com';
-$user->save();
-```
-
----
-
-## 🔍 Querying Data
-
-Use static methods or the `query()` builder for full control.
-
-```php
-// Find by primary key
-$user = User::find(1);
-
-// Get all users
-$users = User::all();
-
-// Fluent query builder
-$filtered = User::query()
-    ->where('email', 'LIKE', '%example.com%')
-    ->orderBy('id', 'DESC')
-    ->limit(5)
-    ->all();
-```
-
----
-
-## 🔄 Updating and Deleting
-
-```php
-// Update
-$user = User::find(1);
-$user->name = 'Updated Name';
-$user->save();
-
-// Delete
-$user->delete();
-```
-
----
-
-## 🤝 Relationships
-
-Rubik supports standard ORM relationships:
-
-- `belongsTo`
-- `hasOne`
-- `hasMany`
-- `belongsToMany`
-
-Example:
-
-```php
-class Post extends Model {
-    protected static function relationships(): array {
-        return [
-            'author' => [
-                'type' => 'belongsTo',
-                'related' => User::class,
-                'foreignKey' => 'user_id',
-                'ownerKey' => 'id',
-            ],
-        ];
-    }
-}
-
-$post = Post::find(1);
-echo $post->author->name;
-```
-
----
-
-## 🧪 Testing with SQLite Memory Databases
-
-Rubik ORM was designed with testing in mind.
-
-You can use an **in-memory SQLite** database to run isolated unit tests quickly:
-
-```php
-Rubik::connect(Driver::SQLITE, path: ':memory:');
-User::createTable();
-
-// Run tests freely
-```
-
-This makes it easy to test models, queries, and relationships without touching a real database.
-
----
-
-## 🧭 Next Steps
-
-Continue exploring Rubik ORM:
-
-- [Configuration](./configuration.md) — customize your connection setup
-- [Models](./models.md) — learn about field definitions, casting, and serialization
-- [Query Builder](./queries.md) — advanced querying with joins and pagination
-- [Relationships](./relationships.md) — define associations between models
-
----
-
-## 💡 Tip
-
-> If you’re coming from **Laravel’s Eloquent**, you’ll feel at home.
-> Rubik offers similar patterns with a lighter, more explicit core — perfect for APIs, CLI tools, and microservices.
-
----
-
-## 🧾 License
-
-Rubik ORM is licensed under **GPLv3**.
-You are free to use, modify, and distribute it under the same license terms.
