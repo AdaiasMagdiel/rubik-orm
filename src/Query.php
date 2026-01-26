@@ -213,61 +213,45 @@ class Query
     public function select(string|array $fields = '*'): self
     {
         $fields = is_string($fields) ? [$fields] : $fields;
-
-        // Handle wildcard selection
         if ($fields === ['*']) {
             $this->select = ['*'];
             return $this;
         }
 
-        // Sanitize and validate all fields
         $sanitizedFields = [];
-        // Track if we are selecting standard columns (to decide on PK injection)
         $hasStandardColumn = false;
 
         foreach ($fields as $field) {
-            // Case 1: Explicit Raw SQL Instance
             if ($field instanceof SQL) {
                 $sanitizedFields[] = (string) $field;
                 continue;
             }
 
-            if (!is_string($field)) {
-                throw new InvalidArgumentException('Fields must be strings or SQL instances.');
-            }
-
             $trimmedField = trim($field);
 
-            // Case 2: Handle Aliases (e.g., "column AS alias")
-            // Note: We only support "col AS alias". "COUNT(*) AS alias" must use SQL::raw()
+            // Handle "column AS alias"
             if (preg_match('/^(.*?)\s+AS\s+(.*?)$/i', $trimmedField, $matches)) {
                 $column = $matches[1];
                 $alias = $matches[2];
 
-                $safeColumn = Rubik::quoteIdentifier($column);
+                $safeColumn = $this->sanitizeColumnReference($column);
                 $safeAlias = Rubik::quoteIdentifier($alias);
-
                 $sanitizedFields[] = "$safeColumn AS $safeAlias";
                 $hasStandardColumn = true;
-            }
-            // Case 3: Standard Column
-            else {
-                $sanitizedFields[] = Rubik::quoteIdentifier($trimmedField);
+            } else {
+                $sanitizedFields[] = $this->sanitizeColumnReference($trimmedField);
                 $hasStandardColumn = true;
             }
         }
 
-        // Logic to ensure Primary Key is selected if we are querying a Model
-        // and we are selecting actual columns (not just aggregates via SQL::raw)
         if ($this->model && $hasStandardColumn) {
             $pk = $this->model::primaryKey();
             $quotedPk = Rubik::quoteIdentifier($pk);
-            $quotedQualifiedPk = Rubik::quoteIdentifier($this->table) . '.' . $quotedPk;
 
-            // Check if the PK is already present in the sanitized list
+            $quotedQualifiedPk = $this->table . '.' . $quotedPk;
+
             $pkIsSelected = false;
             foreach ($sanitizedFields as $sf) {
-                // Strip alias for comparison: "`col` AS `alias`" -> "`col`"
                 $colPart = preg_split('/\s+AS\s+/i', $sf)[0];
                 if ($colPart === $quotedPk || $colPart === $quotedQualifiedPk || $colPart === '*') {
                     $pkIsSelected = true;
@@ -1629,13 +1613,18 @@ class Query
      */
     private function sanitizeColumnReference(string $column): string
     {
-        // Allow qualified columns: table.column
+        $column = trim($column);
+        if ($column === '*') return '*';
+
         if (str_contains($column, '.')) {
             $parts = explode('.', $column);
-            return implode('.', array_map([Rubik::class, 'quoteIdentifier'], $parts));
+            // Clean each part from existing backticks before re-quoting
+            return implode('.', array_map(function ($part) {
+                return Rubik::quoteIdentifier(trim($part, '`'));
+            }, $parts));
         }
 
-        return Rubik::quoteIdentifier($column);
+        return Rubik::quoteIdentifier(trim($column, '`'));
     }
 
     /**
