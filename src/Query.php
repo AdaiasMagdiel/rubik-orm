@@ -487,7 +487,6 @@ class Query
             throw new InvalidArgumentException('whereIn requires a non-empty array');
         }
 
-        $key = $this->sanitizeColumnReference($key);
         $this->addCondition($key, $values, 'IN', 'AND');
         return $this;
     }
@@ -1613,7 +1612,8 @@ class Query
      */
     private function sanitizeColumnReference(string $column): string
     {
-        $column = trim($column);
+        $column = trim($column, " `");
+
         if ($column === '*') return '*';
 
         if (str_contains($column, '.')) {
