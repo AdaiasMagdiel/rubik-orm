@@ -1406,7 +1406,8 @@ class Query
      */
     private function addCondition(string $key, mixed $value, string $op, string $conjunction): void
     {
-        $key = $this->sanitizeColumnReference($key);
+        // 1. Create an escaped version of the column name for the SQL (e.g., `email` or `users`.`id`)
+        $quotedKey = $this->sanitizeColumnReference($key);
         $op = strtoupper($op);
 
         $validOps = ['=', '<>', '<', '>', '<=', '>=', 'LIKE', 'ILIKE', 'IS', 'IS NOT', 'IN'];
@@ -1415,49 +1416,52 @@ class Query
             throw new InvalidArgumentException("Invalid operator: {$op}");
         }
 
-        // Determine conjunction prefix (empty for first condition)
         $prefix = empty($this->where) ? '' : "$conjunction ";
 
         // Handle IS NULL / IS NOT NULL
         if ($op === 'IS' || $op === 'IS NOT') {
             if (!is_null($value)) {
-                throw new InvalidArgumentException("Operator {$op} requires NULL value");
+                throw new InvalidArgumentException("Operator {$op} requires a NULL value");
             }
-            $this->where[] = $prefix . sprintf('%s %s NULL', $key, $op);
+            $this->where[] = $prefix . sprintf('%s %s NULL', $quotedKey, $op);
             return;
         }
 
-        // Handle IN (...)
+        // Handle IN (...) sets
         if ($op === 'IN') {
             if (!is_array($value) || empty($value)) {
                 throw new InvalidArgumentException("IN operator requires a non-empty array");
             }
 
             $placeholders = [];
-            $safeKey = str_replace('.', '_', $key);
+            // Sanitize the key name for the placeholder by removing dots and quotes
+            $cleanKey = str_replace(['.', '`', '"'], ['_', '', ''], $key);
 
             foreach ($value as $i => $val) {
-                $ph = ":{$safeKey}_in_{$i}";
+                $ph = ":{$cleanKey}_in_{$i}";
                 $placeholders[] = $ph;
                 $this->bindings[$ph] = $val;
             }
 
-            $this->where[] = $prefix . sprintf('%s IN (%s)', $key, implode(', ', $placeholders));
+            $this->where[] = $prefix . sprintf('%s IN (%s)', $quotedKey, implode(', ', $placeholders));
             return;
         }
 
-        // Handle SQL::raw() expressions
+        // Handle SQL::raw() expressions for complex queries
         if ($value instanceof SQL) {
-            $this->where[] = $prefix . sprintf('%s %s %s', $key, $op, $value);
+            $this->where[] = $prefix . sprintf('%s %s %s', $quotedKey, $op, $value);
             return;
         }
 
-        // Handle standard conditions with parameter binding
-        $safeKey = str_replace('.', '_', $key);
-        $placeholderKey = $safeKey . '_' . count($this->bindings);
+        // Standard parameter binding
+        // Generate a clean placeholder name (letters, numbers, and underscores only)
+        // We use the original $key before escaping it to ensure placeholder validity
+        $cleanKey = str_replace(['.', '`', '"'], ['_', '', ''], $key);
+        $placeholderKey = $cleanKey . '_' . count($this->bindings);
         $placeholder = ':' . $placeholderKey;
 
-        $this->where[] = $prefix . sprintf('%s %s %s', $key, $op, $placeholder);
+        // Construct the SQL using the escaped key and the sanitized placeholder
+        $this->where[] = $prefix . sprintf('%s %s %s', $quotedKey, $op, $placeholder);
         $this->bindings[$placeholder] = $value;
     }
 

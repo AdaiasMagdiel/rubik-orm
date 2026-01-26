@@ -87,10 +87,7 @@ trait CrudTrait
         if (!isset($this->_data[$pk])) {
             $lastId = Rubik::getConn()->lastInsertId();
 
-            $fieldDef = static::fields()[$pk] ?? [];
-            $isAutoIncrement = $fieldDef['auto_increment'] ?? $fieldDef['autoincrement'] ?? false;
-
-            if ($lastId && $isAutoIncrement) {
+            if ($lastId) {
                 $this->_data[$pk] = (int)$lastId;
             }
 

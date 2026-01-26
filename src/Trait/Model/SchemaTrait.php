@@ -39,11 +39,11 @@ trait SchemaTrait
     {
         $fields = static::fields();
         foreach ($fields as $key => $field) {
-            if ($field['primary_key'] ?? false) {
+            if (($field['primary_key'] ?? false) || ($field['primaryKey'] ?? false)) {
                 return $key;
             }
         }
-        throw new LogicException('No primary key defined for model.');
+        throw new LogicException('No primary key defined for model: ' . static::class);
     }
 
     /**
